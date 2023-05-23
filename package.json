@@ -1,5 +1,5 @@
 {
-  "name": "dynamodb",
+  "name": "@moicky/dynamodb",
   "version": "1.0.0",
   "description": "",
   "main": "dist/built/commonjs/index.js",
