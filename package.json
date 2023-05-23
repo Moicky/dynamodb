@@ -5,6 +5,7 @@
   "main": "dist/built/commonjs/index.js",
   "module": "dist/built/esnext/index.js",
   "types": "dist/index.d.ts",
+  "private": false,
   "scripts": {
     "watch": "webpack --watch --mode=development",
     "build": "webpack --mode=production",
@@ -14,6 +15,9 @@
     "dynamodb-helpers",
     "dynamodb",
     "aws-dynamodb"
+  ],
+  "files": [
+    "dist"
   ],
   "author": "Moicky",
   "license": "ISC",
