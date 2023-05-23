@@ -1,6 +1,6 @@
 {
   "name": "@moicky/dynamodb",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "dist/built/commonjs/index.js",
   "module": "dist/built/esnext/index.js",
