@@ -1,4 +1,8 @@
-const { query, queryAllItems, queryItems } = require("../../dist");
+const {
+  query,
+  queryAllItems,
+  queryItems,
+} = require("../../dist/built/commonjs");
 const { generateItem, PK } = require("../helpers");
 
 describe("query operations", () => {

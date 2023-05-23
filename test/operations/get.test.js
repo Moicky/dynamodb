@@ -1,4 +1,4 @@
-const { getItem, getItems, getAllItems } = require("../../dist");
+const { getItem, getItems, getAllItems } = require("../../dist/built/commonjs");
 const { generateItem, PK } = require("../helpers");
 
 describe("get operations", () => {

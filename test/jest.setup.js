@@ -1,4 +1,8 @@
-const { getAllItems, deleteItems, putItems } = require("../dist");
+const {
+  getAllItems,
+  deleteItems,
+  putItems,
+} = require("../dist/built/commonjs");
 const { generateItem } = require("./helpers");
 
 beforeAll(async () => {

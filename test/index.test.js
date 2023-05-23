@@ -1,4 +1,4 @@
-const { client, TableName } = require("../dist");
+const { client, TableName } = require("../dist/built/commonjs");
 require("dotenv/config");
 
 describe("DynamoDB Setup", () => {
