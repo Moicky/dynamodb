@@ -7,8 +7,7 @@ on:
 
 env:
   AWS_REGION: "eu-central-1"
-  IAM_ROLE_ARN: "arn:aws:iam::339215936300:role/GithubDeployment"
-  DYNAMODB_TABLE: "moicky-dynamodb-DynamoDBTable-VDOV1VFKNRQR"
+  DYNAMODB_TABLE: ${{ secrets.DYNAMODB_TABLE }}
 
 jobs:
   publish-npm:
@@ -27,6 +26,6 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
-      # - run: npm publish --access public
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

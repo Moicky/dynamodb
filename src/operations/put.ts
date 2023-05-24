@@ -32,8 +32,8 @@ export async function putItems(
 ): Promise<void> {
   return new Promise(async (resolve, reject) => {
     const batches = splitEvery(items);
+    const now = Date.now();
     for (const batch of batches) {
-      const now = Date.now();
       batch.forEach((item: any) => {
         if (!Object.keys(item).includes("createdAt")) {
           item.createdAt = now;

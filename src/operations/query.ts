@@ -21,7 +21,10 @@ export async function query(
     new QueryCommand({
       TableName,
       KeyConditionExpression: keyCondition,
-      ExpressionAttributeValues: getAttributeValues(key),
+      ExpressionAttributeValues: getAttributeValues(key, [
+        ...getAttributesFromExpression(keyCondition, ":"),
+        ...getAttributesFromExpression(args?.FilterExpression || "", ":"),
+      ]),
       ExpressionAttributeNames: getAttributeNames(key, [
         ...getAttributesFromExpression(keyCondition),
         ...getAttributesFromExpression(args?.FilterExpression || ""),
@@ -36,19 +39,9 @@ export async function queryItems(
   key: any,
   args: Partial<QueryCommandInput> = {}
 ): Promise<Record<string, any>[]> {
-  const attributesToGet = keyCondition && args?.AttributesToGet;
-  if (attributesToGet) delete args.AttributesToGet;
-
-  return query(keyCondition, key, args).then((res) => {
-    const items = (res?.Items || []).map((item) => item && unmarshall(item));
-
-    if (attributesToGet) {
-      return items.map((item) =>
-        attributesToGet.reduce((acc, cur) => ({ ...acc, [cur]: item[cur] }), {})
-      );
-    }
-    return items;
-  });
+  return query(keyCondition, key, args).then((res) =>
+    (res?.Items || []).map((item) => item && unmarshall(item))
+  );
 }
 
 export async function queryAllItems(
@@ -56,9 +49,6 @@ export async function queryAllItems(
   key: any,
   args: Partial<QueryCommandInput> = {}
 ): Promise<Record<string, any>[]> {
-  const attributesToGet = keyCondition && args?.AttributesToGet;
-  if (attributesToGet) delete args.AttributesToGet;
-
   let data = await query(keyCondition, key, args);
   while (data.LastEvaluatedKey) {
     if (data.LastEvaluatedKey) {
@@ -72,11 +62,5 @@ export async function queryAllItems(
       data && (data.LastEvaluatedKey = helper.LastEvaluatedKey);
     }
   }
-  const items = (data?.Items || []).map((item) => item && unmarshall(item));
-  if (attributesToGet) {
-    return items.map((item) =>
-      attributesToGet.reduce((acc, cur) => ({ ...acc, [cur]: item[cur] }), {})
-    );
-  }
-  return items;
+  return (data?.Items || []).map((item) => item && unmarshall(item));
 }
