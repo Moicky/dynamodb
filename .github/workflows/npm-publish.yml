@@ -22,7 +22,6 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: ${{ env.IAM_ROLE_ARN }}
-          role-session-name: "@moicky/dynamodb"
           aws-region: ${{ env.AWS_REGION }}
       - run: npm ci
       - run: npm run build
