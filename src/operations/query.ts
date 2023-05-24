@@ -14,15 +14,15 @@ import {
 
 export async function query(
   keyCondition: string,
-  keys: any[],
+  key: any,
   args: Partial<QueryCommandInput> = {}
 ): Promise<QueryCommandOutput> {
   return client.send(
     new QueryCommand({
       TableName,
       KeyConditionExpression: keyCondition,
-      ExpressionAttributeValues: getAttributeValues(keys),
-      ExpressionAttributeNames: getAttributeNames(keys, [
+      ExpressionAttributeValues: getAttributeValues(key),
+      ExpressionAttributeNames: getAttributeNames(key, [
         ...getAttributesFromExpression(keyCondition),
         ...getAttributesFromExpression(args?.FilterExpression || ""),
       ]),
