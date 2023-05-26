@@ -1,7 +1,5 @@
 # @moicky/dynamodb
 
-## Stats
-
 ![](https://img.shields.io/github/languages/top/moicky/dynamodb)
 ![](https://img.shields.io/github/actions/workflow/status/moicky/dynamodb/npm-publish.yml?label=build)
 ![](https://img.shields.io/github/actions/workflow/status/moicky/dynamodb/run-tests.yml?label=tests)
