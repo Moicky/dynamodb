@@ -1,4 +1,4 @@
-name: Node.js Package
+name: Run tests using jest
 
 on:
   workflow_dispatch:
