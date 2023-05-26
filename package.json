@@ -1,6 +1,6 @@
 {
   "name": "@moicky/dynamodb",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Contains a collection of convenience functions for working with AWS DynamoDB",
   "main": "dist/built/commonjs/index.js",
   "module": "dist/built/esnext/index.js",
