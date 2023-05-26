@@ -5,7 +5,6 @@
 ![](https://img.shields.io/github/languages/top/moicky/dynamodb)
 ![](https://img.shields.io/github/actions/workflow/status/moicky/dynamodb/npm-publish.yml)
 ![](https://img.shields.io/github/languages/code-size/moicky/dynamodb)
-![](https://img.shields.io/snyk/vulnerabilities/github/moicky/dynamodb)
 ![](https://img.shields.io/github/languages/count/moicky/dynamodb)
 
 ## Description
