@@ -5,6 +5,10 @@ on:
     types: [created]
   workflow_dispatch:
 
+env:
+  AWS_REGION: "eu-central-1"
+  DYNAMODB_TABLE: ${{ secrets.DYNAMODB_TABLE }}
+
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
@@ -14,6 +18,11 @@ jobs:
         with:
           node-version: 18
           registry-url: https://registry.npmjs.org/
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
       - run: npm ci
       - run: npm run build
       - run: npm test
