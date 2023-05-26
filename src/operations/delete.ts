@@ -25,21 +25,32 @@ export async function deleteItem(
 export async function deleteItems(
   keys: any[],
   args: Partial<BatchWriteItemCommandInput> = {},
-  retries = 0
+  retry = 0
 ): Promise<void> {
-  return new Promise(async (resolve, reject) => {
-    const batches = splitEvery(keys);
+  const uniqueKeys = Object.values(
+    keys.reduce((acc, key) => {
+      const strippedKey = stripKey(key);
+      const keyString = JSON.stringify(strippedKey);
+      if (!acc[keyString]) {
+        acc[keyString] = strippedKey;
+      }
+      return acc;
+    }, {})
+  ) as Record<string, any>[];
 
-    if (retries > 3) return;
+  return new Promise(async (resolve, reject) => {
+    const batches = splitEvery(uniqueKeys);
+
+    if (retry > 3) return;
 
     for (const batch of batches) {
       await client
         .send(
           new BatchWriteItemCommand({
             RequestItems: {
-              [TableName]: batch.map((key: any) => ({
+              [TableName]: batch.map((Key) => ({
                 DeleteRequest: {
-                  Key: stripKey(key),
+                  Key,
                 },
               })),
             },
@@ -48,11 +59,11 @@ export async function deleteItems(
         )
         .then((res) => {
           if (res?.UnprocessedItems?.[TableName]?.length) {
-            if (retries + 1 > 3) return reject(res);
+            if (retry + 1 > 3) return reject(res);
             return deleteItems(
               res.UnprocessedItems[TableName],
               args,
-              retries + 1
+              retry + 1
             );
           }
         })

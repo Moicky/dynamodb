@@ -39,15 +39,17 @@ export async function getItems(
   // duplicate key entries would cause an error, so we remove them
   const uniqueKeys = Object.values(
     keys.reduce((acc, key) => {
-      const keyString = `${key.PK}#${key.SK}`;
+      const strippedKey = stripKey(key);
+      const keyString = JSON.stringify(strippedKey);
       if (!acc[keyString]) {
-        acc[keyString] = key;
+        acc[keyString] = strippedKey;
       }
       return acc;
     }, {})
-  );
+  ) as Record<string, any>[];
+
   const batches = splitEvery(uniqueKeys, batchReadLimit);
-  const results: ReturnType<typeof unmarshall>[] = [];
+  const results: Record<string, any> = [];
 
   if (retry > 2) {
     return results;
@@ -59,7 +61,7 @@ export async function getItems(
           new BatchGetItemCommand({
             RequestItems: {
               [TableName]: {
-                Keys: batch.map(stripKey),
+                Keys: batch,
                 ...args,
               },
             },
@@ -78,14 +80,17 @@ export async function getItems(
         .then((items) => results.push(...items));
     })
   );
-  const resultItems = results.reduce((acc, item) => {
-    acc[`${item?.PK}#${item?.SK}`] = item;
-    return acc;
-  }, {});
-  return keys.map((key) => resultItems[`${key.PK}#${key.SK}`] || undefined) as (
-    | ReturnType<typeof unmarshall>
-    | undefined
-  )[];
+  const resultItems = results
+    .filter((i: any) => i)
+    .reduce((acc: Record<string, any>, item: any) => {
+      const keyString = JSON.stringify(stripKey(item));
+      acc[keyString] = item;
+      return acc;
+    }, {});
+
+  return keys.map(
+    (key) => resultItems[JSON.stringify(stripKey(key))] || undefined
+  ) as (Record<string, any> | undefined)[];
 }
 
 export async function getAllItems(args: Partial<ScanCommandInput> = {}) {
