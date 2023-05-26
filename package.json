@@ -1,10 +1,9 @@
 {
   "name": "@moicky/dynamodb",
   "version": "1.1.0",
-  "description": "Contains a collection of convenience functions for working with AWS DynamoDB",
-  "main": "dist/built/commonjs/index.js",
-  "module": "dist/built/esnext/index.js",
+  "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "description": "Contains a collection of convenience functions for working with AWS DynamoDB",
   "homepage": "https://github.com/Moicky/dynamodb#readme",
   "author": {
     "name": "Moicky",
@@ -19,22 +18,20 @@
   },
   "license": "ISC",
   "scripts": {
-    "watch": "webpack --watch --mode=development",
-    "build": "webpack --mode=production",
+    "build": "tsc",
+    "watch": "tsc -w",
     "test": "jest --runInBand"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.338.0",
-    "@aws-sdk/util-dynamodb": "^3.338.0",
-    "aws-crt": "^1.15.16"
+    "@aws-sdk/util-dynamodb": "^3.338.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.1",
-    "jest": "^29.5.0",
-    "aws-sdk": "^2.1383.0",
+    "@types/node": "^20.2.4",
     "dotenv": "^16.0.3",
-    "ts-loader": "^9.4.3",
-    "webpack-cli": "^5.1.1"
+    "typescript": "^5.0.4",
+    "jest": "^29.5.0"
   },
   "keywords": [
     "dynamodb-helpers",
