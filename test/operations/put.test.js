@@ -4,7 +4,7 @@ const {
   itemExists,
   getItem,
   getItems,
-} = require("../../dist/built/commonjs");
+} = require("../../dist");
 const { generateItem } = require("../helpers");
 
 describe("put operations", () => {

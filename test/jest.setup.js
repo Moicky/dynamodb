@@ -1,8 +1,5 @@
-const {
-  getAllItems,
-  deleteItems,
-  putItems,
-} = require("../dist/built/commonjs");
+require("dotenv/config");
+const { getAllItems, deleteItems, putItems } = require("../dist");
 const { generateItem } = require("./helpers");
 
 beforeAll(async () => {

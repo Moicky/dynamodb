@@ -1,9 +1,4 @@
-const {
-  deleteItem,
-  deleteItems,
-  getItem,
-  getAllItems,
-} = require("../../dist/built/commonjs");
+const { deleteItem, deleteItems, getItem, getAllItems } = require("../../dist");
 const { generateItem, PK } = require("../helpers");
 
 describe("delete operations", () => {

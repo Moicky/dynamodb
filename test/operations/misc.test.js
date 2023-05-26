@@ -1,4 +1,4 @@
-const { itemExists, getNewId } = require("../../dist/built/commonjs");
+const { itemExists, getNewId } = require("../../dist");
 const { generateItem, PK } = require("../helpers");
 
 describe("misc operations", () => {
