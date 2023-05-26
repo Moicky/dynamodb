@@ -11,7 +11,7 @@ env:
   DYNAMODB_TABLE: ${{ secrets.DYNAMODB_TABLE }}
 
 jobs:
-  publish-npm:
+  run-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
