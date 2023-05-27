@@ -49,7 +49,7 @@ export async function getItems(
   ) as Record<string, any>[];
 
   const batches = splitEvery(uniqueKeys, batchReadLimit);
-  const results: Record<string, any> = [];
+  const results: Record<string, any>[] = [];
 
   if (retry > 2) {
     return results;
