@@ -50,7 +50,5 @@ export async function getNewId({
   }
   const newId = parseInt(lastId) + 1 + "";
   const withPadding = newId.padStart(length || 0, "0");
-  return SK
-    ? `${SK}${!SK.endsWith("/") ? "/" : ""}${withPadding}`
-    : withPadding;
+  return withPadding;
 }

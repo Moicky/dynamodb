@@ -19,9 +19,9 @@ describe("misc operations", () => {
     const id3 = await getNewId({ PK, SK: "Book", length: 3 });
 
     expect(typeof id1).toEqual("string");
-    expect(id1).toEqual("Book/00000010");
-    expect(id2).toEqual("Book/00000010");
-    expect(id3).toEqual("Book/010");
+    expect(id1).toEqual("00000010");
+    expect(id2).toEqual("00000010");
+    expect(id3).toEqual("010");
     expect(getNewId({ SK: "Book" })).rejects.toThrow();
   });
 });
