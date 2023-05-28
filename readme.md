@@ -126,6 +126,19 @@ await updateItem(
   { description: "A book about a rich guy", author: "F. Scott Fitzgerald" }
 );
 
+await updateItem(
+  { PK: "User/1", SK: "Book/1" },
+  { released: 2000, maxReleased: 1950 }, // maxReleased will not be updated, since it is referenced inside the ConditionExpression
+  { ConditionExpression: "#released < :maxReleased" }
+);
+
+const newItem = await updateItem(
+  { PK: "User/1", SK: "Book/1" },
+  { released: 2000 },
+  { ReturnValues: "ALL_NEW" }
+);
+console.log(newItem); // { "PK": "User/1", "SK": "Book/1", "released": 2000 }
+
 await removeAttributes({ PK: "User/1", SK: "Book/1" }, ["description"]);
 ```
 
