@@ -6,7 +6,7 @@ describe("query operations", () => {
     let items = [
       ...Array.from({ length: 500 }, (_, i) => generateItem(i.toString())),
       ...Array.from({ length: 100 }, (_, i) =>
-        generateItem((500 + i).toString(), "Book")
+        generateItem((500 + i).toString())
       ).map((b) => ({ ...b, released: 2010 })),
     ];
     await putItems(items);
