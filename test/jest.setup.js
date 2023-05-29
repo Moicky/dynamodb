@@ -1,12 +1,7 @@
 require("dotenv/config");
-const { getAllItems, deleteItems, putItems } = require("../dist");
-const { generateItem } = require("./helpers");
+const { getAllItems, deleteItems } = require("../dist");
 
-beforeAll(async () => {
+module.exports = async () => {
   const allItems = await getAllItems();
   await deleteItems(allItems);
-
-  await putItems(
-    Array.from({ length: 10 }).map((_, i) => generateItem(i.toString()))
-  );
-});
+};

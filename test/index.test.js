@@ -1,3 +1,4 @@
+require("dotenv/config");
 const { client, TableName } = require("../dist");
 
 describe("DynamoDB Setup", () => {

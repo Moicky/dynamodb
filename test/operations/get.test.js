@@ -1,7 +1,20 @@
-const { getItem, getItems, getAllItems } = require("../../dist");
-const { generateItem, PK } = require("../helpers");
+require("dotenv/config");
+const { getItem, getItems, getAllItems, putItems } = require("../../dist");
+const { generateItem: unwrappedGenerateItem } = require("../helpers");
+
+const PK = "Operations/Get";
+const itemCount = 10;
+const generateItem = (id) => unwrappedGenerateItem(PK, id);
 
 describe("get operations", () => {
+  beforeAll(async () => {
+    const items = Array.from({ length: itemCount }).map((_, i) =>
+      generateItem((i + 1).toString())
+    );
+
+    await putItems(items);
+  });
+
   it("should get one item", async () => {
     const item = await getItem({ PK, SK: "Book/1" });
     const generatedItem = generateItem("1");
@@ -13,7 +26,7 @@ describe("get operations", () => {
 
   it("should get specific items", async () => {
     const keys = Array.from({ length: 5 }).map((_, i) =>
-      generateItem((i + 2).toString())
+      generateItem((i + 5).toString())
     );
 
     const items = await getItems(keys);
@@ -23,13 +36,13 @@ describe("get operations", () => {
   });
 
   it("should also retrieve not existing items", async () => {
-    const keys = Array.from({ length: 15 }).map((_, i) =>
-      generateItem(i.toString())
+    const keys = Array.from({ length: itemCount + 5 }).map((_, i) =>
+      generateItem((i + 1).toString())
     );
 
     const items = await getItems(keys);
 
-    expect(items).toHaveLength(15);
+    expect(items).toHaveLength(itemCount + 5);
     expect(items[0].PK).toEqual(PK);
     expect(items).toContain(undefined);
   });
@@ -37,7 +50,6 @@ describe("get operations", () => {
   it("should get all items", async () => {
     const items = await getAllItems();
 
-    expect(items).toHaveLength(10);
-    expect(items[0].PK).toEqual(PK);
+    expect(items.filter((item) => item?.PK === PK)).toHaveLength(itemCount);
   });
 });

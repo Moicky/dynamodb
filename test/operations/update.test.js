@@ -1,7 +1,20 @@
-const { updateItem, getItem } = require("../../dist");
-const { generateItem, PK } = require("../helpers");
+require("dotenv/config");
+const { putItems, updateItem, getItem } = require("../../dist");
+const { generateItem: unwrappedGenerateItem } = require("../helpers");
+
+const PK = "Operations/Update";
+const itemCount = 10;
+const generateItem = (id) => unwrappedGenerateItem(PK, id);
 
 describe("update operations", () => {
+  beforeAll(async () => {
+    const items = Array.from({ length: itemCount }).map((_, i) =>
+      generateItem((i + 1).toString())
+    );
+
+    await putItems(items);
+  });
+
   it("should update an item", async () => {
     const item = await getItem(generateItem("1"));
     expect(item.PK).toEqual(PK);

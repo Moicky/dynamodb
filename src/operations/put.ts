@@ -1,11 +1,12 @@
 import {
   BatchWriteItemCommand,
   BatchWriteItemCommandInput,
+  BatchWriteItemCommandOutput,
   PutItemCommand,
   PutItemCommandInput,
   PutItemCommandOutput,
 } from "@aws-sdk/client-dynamodb";
-import { marshall } from "@aws-sdk/util-dynamodb";
+import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 
 import { client, TableName } from "../lib/client";
 import { splitEvery } from "../lib/helpers";
@@ -13,32 +14,37 @@ import { splitEvery } from "../lib/helpers";
 export async function putItem(
   data: any,
   args: Partial<PutItemCommandInput> = {}
-): Promise<PutItemCommandOutput> {
+): Promise<PutItemCommandOutput | Record<string, any>> {
   if (!Object.keys(data).includes("createdAt")) {
     data.createdAt = Date.now();
   }
-  return client.send(
-    new PutItemCommand({
-      TableName,
-      Item: marshall(data),
-      ...args,
-    })
-  );
+  return client
+    .send(
+      new PutItemCommand({
+        TableName,
+        Item: marshall(data),
+        ...args,
+      })
+    )
+    .then((res) => (args?.ReturnValues ? unmarshall(res?.Attributes) : res));
 }
 
 export async function putItems(
   items: any[],
   args: Partial<BatchWriteItemCommandInput> = {}
-): Promise<void> {
+): Promise<BatchWriteItemCommandOutput[]> {
   return new Promise(async (resolve, reject) => {
-    const batches = splitEvery(items);
     const now = Date.now();
+
+    const batches = splitEvery(
+      items.map((item) => ({
+        ...item,
+        createdAt: item?.createdAt ?? now,
+      }))
+    );
+    const results = [];
+
     for (const batch of batches) {
-      batch.forEach((item: any) => {
-        if (!Object.keys(item).includes("createdAt")) {
-          item.createdAt = now;
-        }
-      });
       await client
         .send(
           new BatchWriteItemCommand({
@@ -52,8 +58,9 @@ export async function putItems(
             ...args,
           })
         )
+        .then((res) => results.push(res))
         .catch(reject);
     }
-    resolve();
+    resolve(results);
   });
 }

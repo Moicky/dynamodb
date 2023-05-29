@@ -1,5 +1,9 @@
-const { queryAllItems, queryItems, putItems } = require("../../dist");
-const { generateItem, PK } = require("../helpers");
+require("dotenv/config");
+const { putItems, queryAllItems, queryItems } = require("../../dist");
+const { generateItem: unwrappedGenerateItem } = require("../helpers");
+
+const PK = "Operations/Query";
+const generateItem = (id) => unwrappedGenerateItem(PK, id);
 
 describe("query operations", () => {
   beforeAll(async () => {

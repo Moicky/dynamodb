@@ -1,3 +1,4 @@
+require("dotenv/config");
 const {
   putItem,
   putItems,
@@ -5,9 +6,21 @@ const {
   getItem,
   getItems,
 } = require("../../dist");
-const { generateItem } = require("../helpers");
+const { generateItem: unwrappedGenerateItem } = require("../helpers");
+
+const PK = "Operations/Put";
+const itemCount = 10;
+const generateItem = (id) => unwrappedGenerateItem(PK, id);
 
 describe("put operations", () => {
+  beforeAll(async () => {
+    const items = Array.from({ length: itemCount }).map((_, i) =>
+      generateItem((i + 1).toString())
+    );
+
+    await putItems(items);
+  });
+
   it("should insert a new item", async () => {
     const newItem = generateItem("999");
 
