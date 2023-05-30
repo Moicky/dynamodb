@@ -4,7 +4,6 @@
 ![](https://img.shields.io/github/actions/workflow/status/moicky/dynamodb/npm-publish.yml?label=build)
 ![](https://img.shields.io/github/actions/workflow/status/moicky/dynamodb/run-tests.yml?label=tests)
 ![](https://img.shields.io/github/languages/count/moicky/dynamodb)
-![](https://img.shields.io/bundlephobia/min/@moicky/dynamodb)
 
 ## Description
 
