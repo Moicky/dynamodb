@@ -4,6 +4,7 @@
 ![](https://img.shields.io/github/actions/workflow/status/moicky/dynamodb/npm-publish.yml?label=build)
 ![](https://img.shields.io/github/actions/workflow/status/moicky/dynamodb/run-tests.yml?label=tests)
 ![](https://img.shields.io/github/languages/count/moicky/dynamodb)
+![](https://img.shields.io/tokei/lines/github/moicky/dynamodb)
 
 ## Description
 
@@ -185,7 +186,7 @@ const booksWithFilter = await queryAllItems(
 ### Miscellaneous
 
 ```ts
-import { itemExists, getNewId } from "@moicky/dynamodb";
+import { itemExists, getAscendingId } from "@moicky/dynamodb";
 
 // Check if an item exists using keySchema
 const exists = await itemExists({ PK: "User/1", SK: "Book/1" });
@@ -194,16 +195,16 @@ const exists = await itemExists({ PK: "User/1", SK: "Book/1" });
 
 // Example Structure 1: PK: "User/1", SK: "{{ ASCENDING_ID }}"
 // Last item: { PK: "User/1", SK: "00000009" }
-const id1 = await getNewId({ PK: "User/1" });
+const id1 = await getAscendingId({ PK: "User/1" });
 console.log(id1); // "00000010"
 
 // Example Structure 2: PK: "User/1", SK: "Book/{{ ASCENDING_ID }}"
 // Last item: { PK: "User/1", SK: "Book/00000009" }
-const id2 = await getNewId({ PK: "User/1", SK: "Book" });
+const id2 = await getAscendingId({ PK: "User/1", SKPrefix: "Book" });
 console.log(id2); // "00000010"
 
 // Specify length of ID
-const id3 = await getNewId({ PK: "User/1", SK: "Book", length: 4 });
+const id3 = await getAscendingId({ PK: "User/1", SKPrefix: "Book", length: 4 });
 console.log(id3); // "0010"
 ```
 
