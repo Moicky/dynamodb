@@ -208,6 +208,122 @@ const id3 = await getAscendingId({ PK: "User/1", SKPrefix: "Book", length: 4 });
 console.log(id3); // "0010"
 ```
 
+## Why should I use this?
+
+Generally it makes it easier to interact with the dynamodb from AWS. Here are some before and after examples using the new aws-sdk v3:
+
+### Put
+
+```js
+const demoItem = {
+  PK: "User/1",
+  SK: "Book/1",
+  title: "The Great Gatsby",
+  author: "F. Scott Fitzgerald",
+  released: 1925,
+};
+
+// Without helpers:
+import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
+
+const client = new DynamoDBClient({
+  region: process.env.AWS_REGION,
+});
+
+const newItem = await client
+  .send(
+    new PutItemCommand({
+      TableName: process.env.DYNAMODB_TABLE,
+      Item: marshall(demoItem),
+      ReturnValues: "ALL_NEW",
+    })
+  )
+  .then((result) => unmarshall(result.Attributes));
+
+// With helpers:
+import { putItem } from "@moicky/dynamodb";
+
+const newItem = await putItem(demoItem, { ReturnValues: "ALL_NEW" });
+```
+
+### Query
+
+```js
+// Without helpers:
+import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
+import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
+
+const client = new DynamoDBClient({
+  region: process.env.AWS_REGION,
+});
+
+const results = await client
+  .send(
+    new QueryCommand({
+      TableName: process.env.DYNAMODB_TABLE,
+      KeyConditionExpression: "#PK = :PK and begins_with(#SK, :SK)",
+      ExpressionAttributeNames: {
+        "#PK": "PK",
+        "#SK": "SK",
+      },
+      ExpressionAttributeValues: {
+        ":PK": marshall("User/1"),
+        ":SK": marshall("Book/"),
+      },
+    })
+  )
+  .then((result) => result.Items.map((item) => unmarshall(item)));
+
+// With helpers
+import { queryItems } from "@moicky/dynamodb";
+
+const results = await queryItems("#PK = :PK and begins_with(#SK, :SK)", {
+  PK: "User/1",
+  SK: "Book/",
+});
+```
+
+### Update
+
+```js
+// Without helpers
+import { DynamoDBClient, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
+import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
+
+const client = new DynamoDBClient({
+  region: process.env.AWS_REGION,
+});
+
+const result = await client
+  .send(
+    new UpdateItemCommand({
+      TableName: process.env.DYNAMODB_TABLE,
+      Key: marshall({ PK: "User/1", SK: "Book/1" }),
+      UpdateExpression: "SET #released = :released, #title = :title",
+      ExpressionAttributeNames: {
+        "#released": "released",
+        "#title": "title",
+      },
+      ExpressionAttributeValues: marshall({
+        ":released": 2000,
+        ":title": "New Title",
+      }),
+      ReturnValues: "ALL_NEW",
+    })
+  )
+  .then((result) => unmarshall(result.Attributes));
+
+// With helpers
+import { updateItem } from "@aws-sdk/lib-dynamodb";
+
+const result = await updateItem(
+  { PK: "User/1", SK: "Book/1" },
+  { released: 2000, title: "New Title" },
+  { ReturnValues: "ALL_NEW" }
+);
+```
+
 ## Tests
 
 ```bash
