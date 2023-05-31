@@ -7,26 +7,25 @@ export async function itemExists(
   key: any,
   args: Partial<GetItemCommandInput> = {}
 ) {
-  const item = await getItem(key, args);
-  return item !== undefined && item !== null;
+  return !!(await getItem(key, args));
 }
 
-export async function getNewId({
+export async function getAscendingId({
   PK,
-  SK,
+  SKPrefix,
   length = 8,
 }: {
   PK: string;
-  SK?: string;
+  SKPrefix?: string;
   length?: number;
 }): Promise<string> {
-  // Assumes that you are using SK as the incrementing ID
+  // Assumes that you are the incrementing ID inside the SK
   if (!PK) {
-    throw new Error("Cannot generate new ID: PK");
+    throw new Error("Cannot generate new ID: PK is missing");
   }
   let lastId = "0";
 
-  if (!SK) {
+  if (!SKPrefix) {
     const lastItem = (
       await queryItems(
         "#PK = :PK",
@@ -37,7 +36,7 @@ export async function getNewId({
     const parts = lastItem?.["SK"]?.split("/") || [];
     lastId = parts?.[parts.length - 1] || "0";
   } else {
-    const formattedSK = SK + (!SK.endsWith("/") ? "/" : "");
+    const formattedSK = SKPrefix + (!SKPrefix.endsWith("/") ? "/" : "");
     const lastItem = (
       await queryItems(
         "#PK = :PK and begins_with(#SK, :SK)",

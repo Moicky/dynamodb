@@ -1,5 +1,5 @@
 require("dotenv/config");
-const { putItems, itemExists, getNewId } = require("../../dist");
+const { putItems, itemExists, getAscendingId } = require("../../dist");
 const { generateItem: unwrappedGenerateItem } = require("../helpers");
 
 const PK = "Operations/Misc";
@@ -24,14 +24,14 @@ describe("misc operations", () => {
   });
 
   it("should generate new id", async () => {
-    const id1 = await getNewId({ PK, SK: "Book" });
-    const id2 = await getNewId({ PK, SK: "Book/" });
-    const id3 = await getNewId({ PK, SK: "Book", length: 3 });
+    const id1 = await getAscendingId({ PK, SK: "Book" });
+    const id2 = await getAscendingId({ PK, SK: "Book/" });
+    const id3 = await getAscendingId({ PK, SK: "Book", length: 3 });
 
     expect(typeof id1).toEqual("string");
     expect(id1).toEqual("00000010");
     expect(id2).toEqual("00000010");
     expect(id3).toEqual("010");
-    expect(getNewId({ SK: "Book" })).rejects.toThrow();
+    expect(getAscendingId({ SK: "Book" })).rejects.toThrow();
   });
 });
