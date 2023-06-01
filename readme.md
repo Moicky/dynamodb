@@ -25,7 +25,7 @@ npm i @moicky/dynamodb
 
 ## Setup
 
-Add `DYNAMODB_TABLE` as an **environment variable** containing the name of the dynamodb table. Also make sure to setup the required permissions to access the dynamodb table on aws or on your local machine. Also make sure to use `PK` and `SK` as keySchema attribute names in the table.
+Add `DYNAMODB_TABLE` as an **environment variable** containing the name of the dynamodb table since it will be used by default. Still supports multiple tables since you can pass `TableName` as part of the `args` in every function. Also make sure to setup the required permissions to access the dynamodb table on aws or on your local machine. Also make sure to use `PK` and `SK` as keySchema attribute names in the table.
 
 _Support for different keySchemas will follow 😉_
 

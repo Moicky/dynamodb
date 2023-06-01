@@ -1,4 +1,7 @@
-import { GetItemCommandInput } from "@aws-sdk/client-dynamodb";
+import {
+  GetItemCommandInput,
+  QueryCommandInput,
+} from "@aws-sdk/client-dynamodb";
 
 import { getItem } from "./get";
 import { queryItems } from "./query";
@@ -10,15 +13,14 @@ export async function itemExists(
   return !!(await getItem(key, args));
 }
 
-export async function getAscendingId({
-  PK,
-  SKPrefix,
-  length = 8,
-}: {
-  PK: string;
-  SKPrefix?: string;
-  length?: number;
-}): Promise<string> {
+export async function getAscendingId(
+  {
+    PK,
+    SKPrefix,
+    length = 8,
+  }: { PK: string; SKPrefix?: string; length?: number },
+  args: Partial<QueryCommandInput> = {}
+): Promise<string> {
   // Assumes that you are the incrementing ID inside the SK
   if (!PK) {
     throw new Error("Cannot generate new ID: PK is missing");
@@ -30,7 +32,7 @@ export async function getAscendingId({
       await queryItems(
         "#PK = :PK",
         { PK },
-        { Limit: 1, ScanIndexForward: false }
+        { Limit: 1, ScanIndexForward: false, ...args }
       )
     )?.[0];
     const parts = lastItem?.["SK"]?.split("/") || [];
@@ -41,7 +43,7 @@ export async function getAscendingId({
       await queryItems(
         "#PK = :PK and begins_with(#SK, :SK)",
         { PK, SK: formattedSK },
-        { Limit: 1, ScanIndexForward: false }
+        { Limit: 1, ScanIndexForward: false, ...args }
       )
     )?.[0];
     const parts = lastItem?.["SK"]?.split("/") || [];
