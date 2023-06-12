@@ -1,6 +1,5 @@
 # @moicky/dynamodb
 
-![](https://img.shields.io/github/languages/top/moicky/dynamodb)
 ![](https://img.shields.io/github/actions/workflow/status/moicky/dynamodb/npm-publish.yml?label=build)
 ![](https://img.shields.io/github/actions/workflow/status/moicky/dynamodb/run-tests.yml?label=tests)
 ![](https://img.shields.io/github/languages/count/moicky/dynamodb)
@@ -25,9 +24,49 @@ npm i @moicky/dynamodb
 
 ## Setup
 
-Add `DYNAMODB_TABLE` as an **environment variable** containing the name of the dynamodb table since it will be used by default. Still supports multiple tables since you can pass `TableName` as part of the `args` in every function. Also make sure to setup the required permissions to access the dynamodb table on aws or on your local machine. Also make sure to use `PK` and `SK` as keySchema attribute names in the table.
+Requires a **keySchema** definition to be setup. Automatically grabs `DYNAMODB_TABLE` as an **environment variable** and uses `PK` and `SK` for it's schema. Can be overwritten using `initSchema` with multiple tables:
 
-_Support for different keySchemas will follow 😉_
+```ts
+import { initSchema } from "@moicky/dynamodb";
+
+// Should be called once at the start of the runtime before any operation is executed
+initSchema({
+  // first one will be used if no TableName is specified
+  [process.env.DEFAULT_TABLE]: {
+    hash: "PK",
+    range: "SK",
+  },
+  [process.env.SECOND_TABLE]: {
+    hash: "bookId",
+  },
+});
+```
+
+## Working with multiple tables
+
+Every function accepts `args` which can include a `TableName` property that specifies the table and uses the keySchema from `initSchema()`
+
+```ts
+import { getItem, putItem, deleteItem } from "@moicky/dynamodb";
+
+await putItem(
+  {
+    PK: "User/1",
+    someSortKey: "Book/1",
+    title: "The Great Gatsby",
+    author: "F. Scott Fitzgerald",
+    released: 1925,
+  },
+  { TableName: process.env.SECOND_TABLE }
+);
+
+const item = await getItem(
+  { PK: "User/1", someSortKey: "Book/1" },
+  { TableName: process.env.SECOND_TABLE }
+);
+
+await deleteItem(item, { TableName: process.env.SECOND_TABLE });
+```
 
 ## Usage Examples
 
@@ -192,6 +231,7 @@ import { itemExists, getAscendingId } from "@moicky/dynamodb";
 const exists = await itemExists({ PK: "User/1", SK: "Book/1" });
 
 // Generate ascending ID
+// Specify keySchemaHash and optionally item to start at using keySchemaRange
 
 // Example Structure 1: PK: "User/1", SK: "{{ ASCENDING_ID }}"
 // Last item: { PK: "User/1", SK: "00000009" }
@@ -206,6 +246,14 @@ console.log(id2); // "00000010"
 // Specify length of ID
 const id3 = await getAscendingId({ PK: "User/1", SKPrefix: "Book", length: 4 });
 console.log(id3); // "0010"
+
+// Example Structure 3: someKeySchemaHash: "User/1", SK: "Book/{{ ASCENDING_ID }}"
+// Last item: { someKeySchemaHash: "User/1", SK: "Book/00000009" }
+const id4 = await getAscendingId({
+  someKeySchemaHash: "User/1",
+  SKPrefix: "Book",
+});
+console.log(id4); // "00000010"
 ```
 
 ## Why should I use this?
@@ -325,6 +373,21 @@ const result = await updateItem(
 ```
 
 ## Tests
+
+### Setup
+
+Requires `DEFAULT_TABLE` and `SECOND_TABLE` to be present inside the environment (`.env file`)
+Can be deployed using the `template.yml` on aws:
+
+```bash
+sam deploy
+```
+
+Will then return the table-names as the output of the template
+
+### Execution
+
+Finally executing all tests:
 
 ```bash
 npm run test

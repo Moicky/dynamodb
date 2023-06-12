@@ -1,9 +1,20 @@
 require("dotenv/config");
-const { client, TableName } = require("../dist");
+
+const { client, getDefaultTable, initSchema } = require("../dist");
+
+initSchema({
+  [process.env.DEFAULT_TABLE]: {
+    hash: "PK",
+    range: "SK",
+  },
+  [process.env.SECOND_TABLE]: {
+    hash: "bookId",
+  },
+});
 
 describe("DynamoDB Setup", () => {
   it("should have read table name from env", () => {
-    expect(TableName).toEqual(process.env.DYNAMODB_TABLE);
+    expect(getDefaultTable()).toEqual(process.env.DEFAULT_TABLE);
   });
 
   it("should have created a DynamoDB client", () => {

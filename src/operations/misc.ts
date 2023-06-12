@@ -1,8 +1,6 @@
-import {
-  GetItemCommandInput,
-  QueryCommandInput,
-} from "@aws-sdk/client-dynamodb";
+import { GetItemCommandInput } from "@aws-sdk/client-dynamodb";
 
+import { getDefaultTable, getTableSchema } from "../lib/client";
 import { getItem } from "./get";
 import { queryItems } from "./query";
 
@@ -13,40 +11,51 @@ export async function itemExists(
   return !!(await getItem(key, args));
 }
 
-export async function getAscendingId(
-  {
-    PK,
-    SKPrefix,
-    length = 8,
-  }: { PK: string; SKPrefix?: string; length?: number },
-  args: Partial<QueryCommandInput> = {}
-): Promise<string> {
-  // Assumes that you are the incrementing ID inside the SK
-  if (!PK) {
-    throw new Error("Cannot generate new ID: PK is missing");
+export async function getAscendingId({
+  length = 8,
+  TableName,
+  ...keySchema
+}: {
+  length?: number;
+  TableName?: string;
+  [keySchema: string]: any;
+}): Promise<string> {
+  // Assumes that you are the incrementing ID inside or as the keySchema range key
+
+  const table = TableName || getDefaultTable();
+  const { hash, range } = getTableSchema(table);
+
+  const keySchemaHash = keySchema[hash];
+  const keySchemaRange = keySchema[range];
+
+  if (!keySchemaHash) {
+    throw new Error(
+      `Cannot generate new ID: keySchemaHash is missing, expected '${hash}'`
+    );
   }
   let lastId = "0";
 
-  if (!SKPrefix) {
+  if (!keySchemaRange) {
     const lastItem = (
       await queryItems(
-        "#PK = :PK",
-        { PK },
-        { Limit: 1, ScanIndexForward: false, ...args }
+        `#${hash} = :${hash}`,
+        { [hash]: keySchemaHash },
+        { Limit: 1, ScanIndexForward: false, TableName: table }
       )
     )?.[0];
-    const parts = lastItem?.["SK"]?.split("/") || [];
+    const parts = lastItem?.[range]?.split("/") || [];
     lastId = parts?.[parts.length - 1] || "0";
   } else {
-    const formattedSK = SKPrefix + (!SKPrefix.endsWith("/") ? "/" : "");
+    const formattedSK =
+      keySchemaRange + (!keySchemaRange.endsWith("/") ? "/" : "");
     const lastItem = (
       await queryItems(
-        "#PK = :PK and begins_with(#SK, :SK)",
-        { PK, SK: formattedSK },
-        { Limit: 1, ScanIndexForward: false, ...args }
+        `#${hash} = :${hash} and begins_with(#${range}, :${range})`,
+        { [hash]: keySchemaHash, [range]: formattedSK },
+        { Limit: 1, ScanIndexForward: false, TableName: table }
       )
     )?.[0];
-    const parts = lastItem?.["SK"]?.split("/") || [];
+    const parts = lastItem?.[range]?.split("/") || [];
     lastId = parts?.[formattedSK.split("/").length - 1] || "0";
   }
   const newId = parseInt(lastId) + 1 + "";

@@ -8,7 +8,7 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 
-import { client, TableName } from "../lib/client";
+import { client, getDefaultTable } from "../lib/client";
 import { splitEvery } from "../lib/helpers";
 
 export async function putItem(
@@ -21,9 +21,9 @@ export async function putItem(
   return client
     .send(
       new PutItemCommand({
-        TableName,
         Item: marshall(data),
         ...args,
+        TableName: args?.TableName || getDefaultTable(),
       })
     )
     .then((res) => (args?.ReturnValues ? unmarshall(res?.Attributes) : res));
@@ -31,7 +31,11 @@ export async function putItem(
 
 export async function putItems(
   items: any[],
-  args: Partial<BatchWriteItemCommandInput> = {}
+  args: Partial<
+    BatchWriteItemCommandInput & {
+      TableName?: string;
+    }
+  > = {}
 ): Promise<BatchWriteItemCommandOutput[]> {
   return new Promise(async (resolve, reject) => {
     const now = Date.now();
@@ -44,12 +48,13 @@ export async function putItems(
     );
     const results = [];
 
+    const table = args?.TableName || getDefaultTable();
     for (const batch of batches) {
       await client
         .send(
           new BatchWriteItemCommand({
             RequestItems: {
-              [TableName]: batch.map((item: any) => ({
+              [table]: batch.map((item: any) => ({
                 PutRequest: {
                   Item: marshall(item),
                 },

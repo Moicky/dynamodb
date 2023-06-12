@@ -1,9 +1,10 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
+
 Description: "@Moicky/dynamodb"
 
 Resources:
-  DynamoDBTable:
+  DefaultDynamoDBTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
@@ -20,7 +21,23 @@ Resources:
         - AttributeName: SK
           AttributeType: S
 
+  SecondDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: bookId
+          KeyType: HASH
+      AttributeDefinitions:
+        - AttributeName: bookId
+          AttributeType: S
+
 Outputs:
-  DynamoDBTableArn:
+  DefaultTableArn:
     Description: "DynamoDB Table Arn for tests"
-    Value: !Ref DynamoDBTable
+    Value: !Ref DefaultDynamoDBTable
+  SecondTableArn:
+    Description: "DynamoDB Table Arn for tests"
+    Value: !Ref SecondDynamoDBTable

@@ -1,4 +1,5 @@
 require("dotenv/config");
+
 const { putItems, queryAllItems, queryItems } = require("../../dist");
 const { generateItem: unwrappedGenerateItem } = require("../helpers");
 

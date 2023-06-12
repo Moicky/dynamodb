@@ -3,15 +3,15 @@ import {
   UpdateItemCommandInput,
   UpdateItemCommandOutput,
 } from "@aws-sdk/client-dynamodb";
+import { unmarshall } from "@aws-sdk/util-dynamodb";
 
-import { client, TableName } from "../lib/client";
+import { client, getDefaultTable } from "../lib/client";
 import {
   getAttributeNames,
-  getAttributesFromExpression,
   getAttributeValues,
+  getAttributesFromExpression,
   stripKey,
 } from "../lib/helpers";
-import { unmarshall } from "@aws-sdk/util-dynamodb";
 
 export async function updateItem(
   key: any,
@@ -40,8 +40,7 @@ export async function updateItem(
   return client
     .send(
       new UpdateItemCommand({
-        TableName,
-        Key: stripKey(key),
+        Key: stripKey(key, args),
         UpdateExpression,
         ExpressionAttributeValues: getAttributeValues(data, [
           ...attributesToUpdate,
@@ -52,6 +51,7 @@ export async function updateItem(
           ...namesInCondition,
         ]),
         ...args,
+        TableName: args?.TableName || getDefaultTable(),
       })
     )
     .then((res) =>
@@ -61,15 +61,15 @@ export async function updateItem(
 
 export async function removeAttributes(
   key: any,
-  attributes: string[]
+  attributes: string[],
+  args: Partial<UpdateItemCommandInput> = {}
 ): Promise<UpdateItemCommandOutput> {
   const UpdateExpression =
     "REMOVE " + attributes.map((att) => `#${att}`).join(", ");
 
   return client.send(
     new UpdateItemCommand({
-      TableName,
-      Key: stripKey(key),
+      Key: stripKey(key, args),
       UpdateExpression,
       ExpressionAttributeNames: getAttributeNames(
         attributes.reduce((acc, att) => {
@@ -77,6 +77,8 @@ export async function removeAttributes(
           return acc;
         }, {})
       ),
+      ...args,
+      TableName: args?.TableName || getDefaultTable(),
     })
   );
 }

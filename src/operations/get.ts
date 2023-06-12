@@ -8,19 +8,19 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 
-import { client, TableName } from "../lib/client";
+import { client, getDefaultTable } from "../lib/client";
 import { splitEvery, stripKey } from "../lib/helpers";
 
 export async function getItem(
   key: any,
   args: Partial<GetItemCommandInput> = {}
-) {
+): Promise<Record<string, any> | undefined> {
   return client
     .send(
       new GetItemCommand({
-        TableName,
-        Key: stripKey(key),
+        Key: stripKey(key, args),
         ...args,
+        TableName: args?.TableName || getDefaultTable(),
       })
     )
     .then((res) => res?.Item && unmarshall(res.Item));
@@ -28,7 +28,11 @@ export async function getItem(
 
 export async function getItems(
   keys: any[],
-  args: Partial<BatchGetItemCommandInput> = {},
+  args: Partial<
+    BatchGetItemCommandInput & {
+      TableName?: string;
+    }
+  > = {},
   retry = 0
 ) {
   // creates batches of 100 items each and performs batchGet on every batch.
@@ -39,7 +43,7 @@ export async function getItems(
   // duplicate key entries would cause an error, so we remove them
   const uniqueKeys = Object.values(
     keys.reduce((acc, key) => {
-      const strippedKey = stripKey(key);
+      const strippedKey = stripKey(key, args);
       const keyString = JSON.stringify(strippedKey);
       if (!acc[keyString]) {
         acc[keyString] = strippedKey;
@@ -54,6 +58,9 @@ export async function getItems(
   if (retry > 2) {
     return results;
   }
+  const TableName = args?.TableName || getDefaultTable();
+  delete args.TableName;
+
   await Promise.all(
     batches.map(async (batch) => {
       await client
@@ -71,9 +78,11 @@ export async function getItems(
           const unprocessed = res?.UnprocessedKeys?.[TableName];
           const allItemsFromBatch = res?.Responses?.[TableName] || [];
           if (unprocessed) {
-            return getItems(unprocessed.Keys, args, retry + 1).then((items) =>
-              allItemsFromBatch.concat(items)
-            );
+            return getItems(
+              unprocessed.Keys,
+              { ...args, TableName },
+              retry + 1
+            ).then((items) => allItemsFromBatch.concat(items));
           }
           return allItemsFromBatch.map((item) => item && unmarshall(item));
         })
@@ -83,13 +92,14 @@ export async function getItems(
   const resultItems = results
     .filter((i: any) => i)
     .reduce((acc: Record<string, any>, item: any) => {
-      const keyString = JSON.stringify(stripKey(item));
+      const keyString = JSON.stringify(stripKey(item, { TableName }));
       acc[keyString] = item;
       return acc;
     }, {});
 
   return keys.map(
-    (key) => resultItems[JSON.stringify(stripKey(key))] || undefined
+    (key) =>
+      resultItems[JSON.stringify(stripKey(key, { TableName }))] || undefined
   ) as (Record<string, any> | undefined)[];
 }
 
@@ -97,8 +107,8 @@ export async function getAllItems(args: Partial<ScanCommandInput> = {}) {
   return client
     .send(
       new ScanCommand({
-        TableName,
         ...args,
+        TableName: args?.TableName || getDefaultTable(),
       })
     )
     .then((res) => res.Items.map((item) => item && unmarshall(item)));

@@ -1,12 +1,16 @@
 import { marshall } from "@aws-sdk/util-dynamodb";
+import { getTableSchema } from "../lib/client";
 
-// ----- Configuration -----
 // Since dynamo only accepts key atrtributes which are described in table schema
 // we remove any other attributes from the item if they are present and passed as
 // key parameter to any of the functions below (getItem, updateItem, deleteItem...)
 
-export function stripKey(key: any) {
-  return marshall({ PK: key.PK, SK: key.SK }) as Record<string, any>;
+export function stripKey(key: any, args?: { TableName?: string }) {
+  const { hash, range } = getTableSchema(args?.TableName);
+  return marshall({
+    [hash]: key[hash],
+    ...(range && { [range]: key[range] }),
+  }) as Record<string, any>;
 }
 
 export function splitEvery<T>(items: T[], limit = 25) {

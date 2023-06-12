@@ -5,11 +5,11 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 
-import { client, TableName } from "../lib/client";
+import { client, getDefaultTable } from "../lib/client";
 import {
   getAttributeNames,
-  getAttributesFromExpression,
   getAttributeValues,
+  getAttributesFromExpression,
 } from "../lib/helpers";
 
 export async function query(
@@ -19,7 +19,6 @@ export async function query(
 ): Promise<QueryCommandOutput> {
   return client.send(
     new QueryCommand({
-      TableName,
       KeyConditionExpression: keyCondition,
       ExpressionAttributeValues: getAttributeValues(key, [
         ...getAttributesFromExpression(keyCondition, ":"),
@@ -30,6 +29,7 @@ export async function query(
         ...getAttributesFromExpression(args?.FilterExpression || ""),
       ]),
       ...args,
+      TableName: args?.TableName || getDefaultTable(),
     })
   );
 }
