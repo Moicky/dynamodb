@@ -13,7 +13,7 @@ Contains convenience functions for all major dynamodb operations. Requires very 
 - 📦 Will **group items into batches** to avoid aws limits and improve performance
 - ⏱ Will **automatically** add `createdAt` and `updatedAt` attributes on all items to track their most recent create/update operation timestamp. Example value: `Date.now() -> 1685138436000`
 - 🔄 Will **retry** some operations (getItems, deleteItems) **up to 3 times** on unprocessed items
-- 🔒 When specifying an item using its keySchema, all additional attributes (apart from **PK** and **SK**) will be removed to avoid errors
+- 🔒 When specifying an item using its keySchema, all additional attributes (apart from keySchema attributes from `initSchema` or `PK` & `SK` as default) will be removed to avoid errors
 - 👻 Will **use placeholders** to avoid colliding with [reserved words](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ReservedWords.html) if applicable
 
 ## Installation
