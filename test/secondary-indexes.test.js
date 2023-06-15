@@ -31,7 +31,7 @@ describe("Secondary indexes workflows", () => {
     const queryResult = await query(
       `#PK = :PK and #stars > :stars`,
       { PK, stars: 4 },
-      { TableName, IndexName: "booksByStars", Limit: 10 }
+      { TableName, GSI: "booksByStars", Limit: 10 }
     );
 
     expect(queryResult.Items.length).toEqual(10);
@@ -42,7 +42,7 @@ describe("Secondary indexes workflows", () => {
     const items = await queryItems(
       `#author = :author and begins_with(#SK, :SK)`,
       { author: generateItem("1").author, SK: "Book/" },
-      { TableName, IndexName: "booksByAuthor", Limit: 10 }
+      { TableName, Index: "booksByAuthor", Limit: 10 }
     );
 
     expect(items.length).toEqual(10);

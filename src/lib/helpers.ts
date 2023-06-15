@@ -1,4 +1,5 @@
 import { marshall } from "@aws-sdk/util-dynamodb";
+
 import { getTableSchema } from "../lib/client";
 
 // Since dynamo only accepts key atrtributes which are described in table schema
@@ -43,4 +44,19 @@ export function getAttributesFromExpression(expression: string, prefix = "#") {
       .match(new RegExp(`${prefix}\\w+`, "g"))
       ?.map((attr) => attr.slice(1)) || []
   );
+}
+
+export function handleAliases(
+  aliases: { [attr: string]: string[] },
+  args: Record<string, any> = {}
+) {
+  Object.keys(aliases).forEach((key) => {
+    aliases[key].forEach((alias: string) => {
+      if (args[alias]) {
+        args[key] = args[alias];
+        delete args[alias];
+      }
+    });
+  });
+  return args;
 }

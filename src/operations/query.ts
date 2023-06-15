@@ -1,6 +1,6 @@
 import {
   QueryCommand,
-  QueryCommandInput,
+  QueryCommandInput as _QueryCommandInput,
   QueryCommandOutput,
 } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
@@ -10,13 +10,24 @@ import {
   getAttributeNames,
   getAttributeValues,
   getAttributesFromExpression,
+  handleAliases,
 } from "../lib/helpers";
+
+const aliases = {
+  IndexName: ["GSI", "Index"],
+};
+
+type QueryCommandInput = {
+  GSI: _QueryCommandInput["IndexName"];
+  Index: _QueryCommandInput["IndexName"];
+} & _QueryCommandInput;
 
 export async function query(
   keyCondition: string,
   key: any,
   args: Partial<QueryCommandInput> = {}
 ): Promise<QueryCommandOutput> {
+  args = handleAliases(aliases, args);
   return client.send(
     new QueryCommand({
       KeyConditionExpression: keyCondition,
