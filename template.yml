@@ -34,6 +34,44 @@ Resources:
         - AttributeName: bookId
           AttributeType: S
 
+  TableWithGSIs:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: author
+          AttributeType: S
+        - AttributeName: stars
+          AttributeType: N
+      GlobalSecondaryIndexes:
+        - IndexName: booksByAuthor
+          KeySchema:
+            - AttributeName: author
+              KeyType: HASH
+            - AttributeName: SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: booksByStars
+          KeySchema:
+            - AttributeName: PK
+              KeyType: HASH
+            - AttributeName: stars
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
 Outputs:
   DefaultTableArn:
     Description: "DynamoDB Table Arn for tests"
@@ -41,3 +79,6 @@ Outputs:
   SecondTableArn:
     Description: "DynamoDB Table Arn for tests"
     Value: !Ref SecondDynamoDBTable
+  TableWithGSIsArn:
+    Description: "DynamoDB Table Arn for tests"
+    Value: !Ref TableWithGSIs

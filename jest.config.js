@@ -1,11 +1,13 @@
+const testDir = "<rootDir>/test";
+
 module.exports = {
-  testMatch: ["<rootDir>/test/**/*.js"],
+  testMatch: [`${testDir}/**/*.js`],
   testPathIgnorePatterns: [
-    "<rootDir>/test/helpers.js",
-    "<rootDir>/test/jest.setup.js",
-    "<rootDir>/test/jest.setup-each.js",
+    `${testDir}/helpers.js`,
+    `${testDir}/setup/init.js`,
+    `${testDir}/setup/setup-each.js`,
   ],
-  globalSetup: "<rootDir>/test/jest.setup.js",
-  setupFilesAfterEnv: ["<rootDir>/test/jest.setup-each.js"],
+  globalSetup: `${testDir}/setup/init.js`,
+  setupFilesAfterEnv: [`${testDir}/setup/setup-each.js`],
   testTimeout: 30000,
 };

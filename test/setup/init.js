@@ -1,8 +1,8 @@
 require("dotenv/config");
 
-const { initSchema, getAllItems, deleteItems } = require("../dist");
+const { initSchema, getAllItems, deleteItems } = require("../../dist");
 
-initSchema({
+const schema = {
   [process.env.DEFAULT_TABLE]: {
     hash: "PK",
     range: "SK",
@@ -10,13 +10,16 @@ initSchema({
   [process.env.SECOND_TABLE]: {
     hash: "bookId",
   },
-});
+  [process.env.GSI_TABLE]: {
+    hash: "PK",
+    range: "SK",
+  },
+};
+
+initSchema(schema);
 
 module.exports = async () => {
-  for (const TableName of [
-    process.env.DEFAULT_TABLE,
-    process.env.SECOND_TABLE,
-  ]) {
+  for (const TableName of Object.keys(schema)) {
     const allItems = await getAllItems({ TableName });
     await deleteItems(allItems, { TableName });
   }
