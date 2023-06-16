@@ -31,7 +31,7 @@ import { initSchema } from "@moicky/dynamodb";
 
 // Should be called once at the start of the runtime before any operation is executed
 initSchema({
-  // first one will be used if no TableName is specified
+  // first one will be used by default if no TableName is specified
   [process.env.DEFAULT_TABLE]: {
     hash: "PK",
     range: "SK",
@@ -376,8 +376,10 @@ const result = await updateItem(
 
 ### Setup
 
-Requires `DEFAULT_TABLE` and `SECOND_TABLE` to be present inside the environment (`.env file`)
-Can be deployed using the `template.yml` on aws:
+Requires environment variables to be present for the tests to successfully connect to dynamodb tables. You can find a list of required environment variables here:
+[./test/setup/setup-each.js](./test/setup/setup-each.js)
+
+They can be obtained using the **template.yml** which can be deployed on aws using:
 
 ```bash
 sam deploy
