@@ -146,8 +146,7 @@ await deleteItem({
 });
 
 // Delete multiple items
-// KeySchemas will be grouped into batches of 25 and will be retried up to 3 times if there are unprocessed items
-// Will only delete each keySchema only once, even if it is present multiple times in the array to improve performance
+// Will only delete each keySchema once, even if it is present multiple times in the array to improve performance and avoid aws errors
 await deleteItems([
   { PK: "User/1", SK: "Book/1" },
   // ... infinite more items (will be grouped into batches of 25 due to aws limit) and retried up to 3 times
@@ -161,13 +160,13 @@ import { updateItem, removeAttributes } from "@moicky/dynamodb";
 
 // Update the item and overwrite all supplied fields
 await updateItem(
-  { PK: "User/1", SK: "Book/1" },
-  { description: "A book about a rich guy", author: "F. Scott Fitzgerald" }
+  { PK: "User/1", SK: "Book/1" }, // reference to item
+  { description: "A book about a rich guy", author: "F. Scott Fitzgerald" } // fields to update
 );
 
 await updateItem(
   { PK: "User/1", SK: "Book/1" },
-  { released: 2000, maxReleased: 1950 }, // maxReleased will not be updated, since it is referenced inside the ConditionExpression
+  { released: 2000, maxReleased: 1950 }, // maxReleased will not be updated on the item, since it is referenced inside the ConditionExpression
   { ConditionExpression: "#released < :maxReleased" }
 );
 
@@ -187,7 +186,7 @@ await removeAttributes({ PK: "User/1", SK: "Book/1" }, ["description"]);
 import { query, queryItems, queryAllItems } from "@moicky/dynamodb";
 
 // You HAVE TO use placeholders for the keyCondition & filterExpression:
-// prefix the attributeNames with a hash (#) and the attributeValues with a colon (:)
+// Prefix the attributeNames with a hash (#) and the attributeValues with a colon (:)
 
 // Query only using keyCondition and retrieve complete response
 const booksResponse = await query("#PK = :PK and begins_with(#SK, :SK)", {
@@ -217,8 +216,8 @@ const booksWithFilter = await queryAllItems(
     from: 1950,
     to: 2000,
   },
-  // additional args with filterExpression
-  { FilterExpression: "#released BETWEEN :from AND :to" } // allows to override all args
+  // additional args with filterExpression for example
+  { FilterExpression: "#released BETWEEN :from AND :to" }
 );
 ```
 
@@ -229,6 +228,7 @@ import { itemExists, getAscendingId } from "@moicky/dynamodb";
 
 // Check if an item exists using keySchema
 const exists = await itemExists({ PK: "User/1", SK: "Book/1" });
+console.log(exists); // true / false
 
 // Generate ascending ID
 // Specify keySchemaHash and optionally item to start at using keySchemaRange
@@ -240,18 +240,18 @@ console.log(id1); // "00000010"
 
 // Example Structure 2: PK: "User/1", SK: "Book/{{ ASCENDING_ID }}"
 // Last item: { PK: "User/1", SK: "Book/00000009" }
-const id2 = await getAscendingId({ PK: "User/1", SKPrefix: "Book" });
+const id2 = await getAscendingId({ PK: "User/1", SK: "Book" });
 console.log(id2); // "00000010"
 
 // Specify length of ID
-const id3 = await getAscendingId({ PK: "User/1", SKPrefix: "Book", length: 4 });
+const id3 = await getAscendingId({ PK: "User/1", SK: "Book", length: 4 });
 console.log(id3); // "0010"
 
 // Example Structure 3: someKeySchemaHash: "User/1", SK: "Book/{{ ASCENDING_ID }}"
 // Last item: { someKeySchemaHash: "User/1", SK: "Book/00000009" }
 const id4 = await getAscendingId({
   someKeySchemaHash: "User/1",
-  SKPrefix: "Book",
+  SK: "Book",
 });
 console.log(id4); // "00000010"
 ```
