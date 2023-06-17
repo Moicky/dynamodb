@@ -22,12 +22,12 @@ class DynamoDBConfig {
     const defaultTable = process.env.DYNAMODB_TABLE as string;
 
     if (defaultTable) {
-      this.tablesSchema[defaultTable] = {
-        hash: "PK",
-        range: "SK",
-      };
-
-      this.#initialized = true;
+      this.initSchema({
+        [defaultTable]: {
+          hash: "PK",
+          range: "SK",
+        },
+      });
     }
   }
 
@@ -55,8 +55,7 @@ class DynamoDBConfig {
     if (!this.#initialized) {
       throw new Error("Schema not initialized");
     }
-    const table = Object.keys(this.tablesSchema)[0];
-    return table;
+    return Object.keys(this.tablesSchema)[0];
   }
 
   getTableSchema(tableName?: string): KeySchema {

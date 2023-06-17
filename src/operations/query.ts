@@ -51,7 +51,9 @@ export async function queryItems(
   args: Partial<QueryCommandInput> = {}
 ): Promise<Record<string, any>[]> {
   return query(keyCondition, key, args).then((res) =>
-    (res?.Items || []).map((item) => item && unmarshall(item))
+    (res?.Items || [])
+      .map((item) => item && unmarshall(item))
+      .filter((item) => item)
   );
 }
 
@@ -73,5 +75,7 @@ export async function queryAllItems(
       data && (data.LastEvaluatedKey = helper.LastEvaluatedKey);
     }
   }
-  return (data?.Items || []).map((item) => item && unmarshall(item));
+  return (data?.Items || [])
+    .map((item) => item && unmarshall(item))
+    .filter((item) => item);
 }
