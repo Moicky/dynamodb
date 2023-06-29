@@ -53,4 +53,9 @@ describe("get operations", () => {
 
     expect(items.filter((item) => item?.PK === PK)).toHaveLength(itemCount);
   });
+  it("should not crash with empty items array", async () => {
+    const items = await getItems([]);
+
+    expect(items).toHaveLength(0);
+  });
 });
