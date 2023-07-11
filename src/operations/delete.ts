@@ -6,7 +6,7 @@ import {
   DeleteItemCommandOutput,
 } from "@aws-sdk/client-dynamodb";
 
-import { client, getDefaultTable } from "../lib/client";
+import { client, getDefaultTable, withDefaults } from "../lib/client";
 import { splitEvery, stripKey } from "../lib/helpers";
 
 export async function deleteItem(
@@ -16,7 +16,7 @@ export async function deleteItem(
   return client.send(
     new DeleteItemCommand({
       Key: stripKey(key, args),
-      ...args,
+      ...withDefaults(args, "deleteItem"),
       TableName: args?.TableName || getDefaultTable(),
     })
   );
@@ -31,6 +31,7 @@ export async function deleteItems(
   > = {},
   retry = 0
 ): Promise<void> {
+  args = withDefaults(args, "deleteItems");
   const uniqueKeys = Object.values(
     keys.reduce((acc, key) => {
       const strippedKey = stripKey(key, args);

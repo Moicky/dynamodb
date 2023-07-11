@@ -1,33 +1,22 @@
 import {
   QueryCommand,
-  QueryCommandInput as _QueryCommandInput,
+  QueryCommandInput,
   QueryCommandOutput,
 } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 
-import { client, getDefaultTable } from "../lib/client";
+import { client, getDefaultTable, withDefaults } from "../lib/client";
 import {
   getAttributeNames,
   getAttributeValues,
   getAttributesFromExpression,
-  handleAliases,
 } from "../lib/helpers";
 
-const aliases = {
-  IndexName: ["GSI", "Index"],
-};
-
-type QueryCommandInput = {
-  GSI: _QueryCommandInput["IndexName"];
-  Index: _QueryCommandInput["IndexName"];
-} & _QueryCommandInput;
-
-export async function query(
+async function _query(
   keyCondition: string,
   key: any,
   args: Partial<QueryCommandInput> = {}
 ): Promise<QueryCommandOutput> {
-  args = handleAliases(aliases, args);
   return client.send(
     new QueryCommand({
       KeyConditionExpression: keyCondition,
@@ -45,12 +34,22 @@ export async function query(
   );
 }
 
+export async function query(
+  keyCondition: string,
+  key: any,
+  args?: Partial<QueryCommandInput>
+): Promise<QueryCommandOutput> {
+  return _query(keyCondition, key, withDefaults(args, "query"));
+}
+
 export async function queryItems(
   keyCondition: string,
   key: any,
   args: Partial<QueryCommandInput> = {}
 ): Promise<Record<string, any>[]> {
-  return query(keyCondition, key, args).then((res) =>
+  args = withDefaults(args, "queryItems");
+
+  return _query(keyCondition, key, args).then((res) =>
     (res?.Items || [])
       .map((item) => item && unmarshall(item))
       .filter((item) => item)
@@ -62,10 +61,12 @@ export async function queryAllItems(
   key: any,
   args: Partial<QueryCommandInput> = {}
 ): Promise<Record<string, any>[]> {
-  let data = await query(keyCondition, key, args);
+  args = withDefaults(args, "queryAllItems");
+
+  let data = await _query(keyCondition, key, args);
   while (data.LastEvaluatedKey) {
     if (data.LastEvaluatedKey) {
-      let helper = await query(keyCondition, key, {
+      let helper = await _query(keyCondition, key, {
         ...args,
         ExclusiveStartKey: data.LastEvaluatedKey,
       });

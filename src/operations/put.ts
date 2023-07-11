@@ -8,13 +8,15 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 
-import { client, getDefaultTable } from "../lib/client";
+import { client, getDefaultTable, withDefaults } from "../lib/client";
 import { splitEvery } from "../lib/helpers";
 
 export async function putItem(
   data: any,
   args: Partial<PutItemCommandInput> = {}
 ): Promise<PutItemCommandOutput | Record<string, any>> {
+  args = withDefaults(args, "putItem");
+
   if (!Object.keys(data).includes("createdAt")) {
     data.createdAt = Date.now();
   }
@@ -37,6 +39,8 @@ export async function putItems(
     }
   > = {}
 ): Promise<BatchWriteItemCommandOutput[]> {
+  args = withDefaults(args, "putItems");
+
   return new Promise(async (resolve, reject) => {
     const now = Date.now();
 

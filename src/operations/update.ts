@@ -5,7 +5,7 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 
-import { client, getDefaultTable } from "../lib/client";
+import { client, getDefaultTable, withDefaults } from "../lib/client";
 import {
   getAttributeNames,
   getAttributeValues,
@@ -18,6 +18,8 @@ export async function updateItem(
   data: any,
   args: Partial<UpdateItemCommandInput> = {}
 ): Promise<undefined | Record<string, any>> {
+  args = withDefaults(args, "updateItem");
+
   if (!Object.keys(data).includes("updatedAt")) {
     data.updatedAt = Date.now();
   }
@@ -64,6 +66,8 @@ export async function removeAttributes(
   attributes: string[],
   args: Partial<UpdateItemCommandInput> = {}
 ): Promise<UpdateItemCommandOutput> {
+  args = withDefaults(args, "removeAttributes");
+
   const UpdateExpression =
     "REMOVE " + attributes.map((att) => `#${att}`).join(", ");
 

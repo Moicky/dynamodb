@@ -8,13 +8,15 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 
-import { client, getDefaultTable } from "../lib/client";
+import { client, getDefaultTable, withDefaults } from "../lib/client";
 import { splitEvery, stripKey } from "../lib/helpers";
 
 export async function getItem(
   key: any,
   args: Partial<GetItemCommandInput> = {}
 ): Promise<Record<string, any> | undefined> {
+  args = withDefaults(args, "getItem");
+
   return client
     .send(
       new GetItemCommand({
@@ -35,6 +37,8 @@ export async function getItems(
   > = {},
   retry = 0
 ) {
+  args = withDefaults(args, "getItems");
+
   // creates batches of 100 items each and performs batchGet on every batch.
   // also retries up to 3 times if there are unprocessed items (due to size limit of 16MB)
   // returns items in same order as keys (not sorted by default when using batchGet)
@@ -104,6 +108,8 @@ export async function getItems(
 }
 
 export async function getAllItems(args: Partial<ScanCommandInput> = {}) {
+  args = withDefaults(args, "getAllItems");
+
   return client
     .send(
       new ScanCommand({

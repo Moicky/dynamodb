@@ -1,5 +1,28 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
+import * as ops from "../operations";
+
+interface OperationArguments {
+  deleteItem?: Parameters<typeof ops.deleteItem>[1];
+  deleteItems?: Parameters<typeof ops.deleteItems>[1];
+
+  getItem?: Parameters<typeof ops.getItem>[1];
+  getItems?: Parameters<typeof ops.getItems>[1];
+  getAllItems?: Parameters<typeof ops.getAllItems>[0];
+
+  putItem?: Parameters<typeof ops.putItem>[1];
+  putItems?: Parameters<typeof ops.putItems>[1];
+
+  query?: Parameters<typeof ops.query>[2];
+  queryItems?: Parameters<typeof ops.queryItems>[2];
+  queryAllItems?: Parameters<typeof ops.queryAllItems>[2];
+
+  updateItem?: Parameters<typeof ops.updateItem>[2];
+  removeAttributes?: Parameters<typeof ops.removeAttributes>[2];
+}
+
+type Operation = keyof OperationArguments;
+
 declare interface KeySchema {
   hash: string;
   range?: string;
@@ -13,6 +36,7 @@ class DynamoDBConfig {
   client: DynamoDBClient;
   tablesSchema: KeySchemaCollection = {};
   #initialized = false;
+  #defaults: OperationArguments = {};
 
   constructor({ region }: { region?: string } = {}) {
     this.client = new DynamoDBClient({
@@ -89,6 +113,20 @@ class DynamoDBConfig {
     return true;
   }
 
+  initDefaults(newDefaults: OperationArguments) {
+    this.#defaults = { ...newDefaults };
+  }
+
+  withDefaults<T extends Operation>(
+    args: OperationArguments[T],
+    operation: T
+  ): OperationArguments[T] {
+    return {
+      ...this.#defaults[operation],
+      ...args,
+    };
+  }
+
   destroy() {
     this.client.destroy();
   }
@@ -96,23 +134,18 @@ class DynamoDBConfig {
 
 const config = new DynamoDBConfig();
 
+const bind = <T extends (...args: any[]) => any>(fn: T): T => {
+  return fn.bind(config);
+};
+
 export const client = config.client;
-export const getDefaultTable = config.getDefaultTable.bind(
-  config
-) as typeof config.getDefaultTable;
-
-export const getTableSchema = config.getTableSchema.bind(
-  config
-) as typeof config.getTableSchema;
-
-export const getDefaultTableSchema = config.getDefaultTableSchema.bind(
-  config
-) as typeof config.getDefaultTableSchema;
-
-export const initSchema = config.initSchema.bind(
-  config
-) as typeof config.initSchema;
-
-export const destroy = config.destroy.bind(config) as typeof config.destroy;
+export const initSchema = bind(config.initSchema);
+export const getDefaultTable = bind(config.getDefaultTable);
+export const getDefaultTableSchema = bind(config.getDefaultTableSchema);
+export const validateSchema = bind(config.validateSchema);
+export const getTableSchema = bind(config.getTableSchema);
+export const initDefaults = bind(config.initDefaults);
+export const withDefaults = bind(config.withDefaults);
+export const destroy = bind(config.destroy);
 
 export default config;
