@@ -6,6 +6,5 @@ stack_name = "moicky-dynamodb"
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-141btx4jxi9e4"
 s3_prefix = "moicky-dynamodb"
 region = "eu-central-1"
-profile = "personal"
 capabilities = "CAPABILITY_IAM"
 image_repositories = []
