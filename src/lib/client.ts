@@ -1,24 +1,37 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
-import * as ops from "../operations";
+import {
+  deleteItem,
+  deleteItems,
+  getItem,
+  getItems,
+  getAllItems,
+  putItem,
+  putItems,
+  query,
+  queryItems,
+  queryAllItems,
+  updateItem,
+  removeAttributes,
+} from "../operations";
 
 interface OperationArguments {
-  deleteItem?: Parameters<typeof ops.deleteItem>[1];
-  deleteItems?: Parameters<typeof ops.deleteItems>[1];
+  deleteItem?: Parameters<typeof deleteItem>[1];
+  deleteItems?: Parameters<typeof deleteItems>[1];
 
-  getItem?: Parameters<typeof ops.getItem>[1];
-  getItems?: Parameters<typeof ops.getItems>[1];
-  getAllItems?: Parameters<typeof ops.getAllItems>[0];
+  getItem?: Parameters<typeof getItem>[1];
+  getItems?: Parameters<typeof getItems>[1];
+  getAllItems?: Parameters<typeof getAllItems>[0];
 
-  putItem?: Parameters<typeof ops.putItem>[1];
-  putItems?: Parameters<typeof ops.putItems>[1];
+  putItem?: Parameters<typeof putItem>[1];
+  putItems?: Parameters<typeof putItems>[1];
 
-  query?: Parameters<typeof ops.query>[2];
-  queryItems?: Parameters<typeof ops.queryItems>[2];
-  queryAllItems?: Parameters<typeof ops.queryAllItems>[2];
+  query?: Parameters<typeof query>[2];
+  queryItems?: Parameters<typeof queryItems>[2];
+  queryAllItems?: Parameters<typeof queryAllItems>[2];
 
-  updateItem?: Parameters<typeof ops.updateItem>[2];
-  removeAttributes?: Parameters<typeof ops.removeAttributes>[2];
+  updateItem?: Parameters<typeof updateItem>[2];
+  removeAttributes?: Parameters<typeof removeAttributes>[2];
 }
 
 type Operation = keyof OperationArguments;

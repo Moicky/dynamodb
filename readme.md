@@ -2,8 +2,6 @@
 
 ![](https://img.shields.io/github/actions/workflow/status/moicky/dynamodb/npm-publish.yml?label=build)
 ![](https://img.shields.io/github/actions/workflow/status/moicky/dynamodb/run-tests.yml?label=tests)
-![](https://img.shields.io/github/languages/count/moicky/dynamodb)
-![](https://img.shields.io/tokei/lines/github/moicky/dynamodb)
 
 ## Description
 
@@ -15,6 +13,7 @@ Contains convenience functions for all major dynamodb operations. Requires very 
 - 🔄 Will **retry** some operations (getItems, deleteItems) **up to 3 times** on unprocessed items
 - 🔒 When specifying an item using its keySchema, all additional attributes (apart from keySchema attributes from `initSchema` or `PK` & `SK` as default) will be removed to avoid errors
 - 👻 Will **use placeholders** to avoid colliding with [reserved words](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ReservedWords.html) if applicable
+- 🌎 Supports globally defined default arguments for each operation
 
 ## Installation
 
@@ -66,6 +65,26 @@ const item = await getItem(
 );
 
 await deleteItem(item, { TableName: process.env.SECOND_TABLE });
+```
+
+## Configuring global defaults
+
+Global defaults can be configured using the `initDefaults` function. This allows to provide but still override every property of the `args` parameter.
+
+Should be called before any DynamoDB operations are performed.
+
+```ts
+import { initDefaults } from "@moicky/dynamodb";
+
+// Enables consistent reads for all DynamoDB operations which support it.
+initDefaults({
+  getItem: { ConsistentRead: true },
+  getAllItems: { ConsistentRead: true },
+
+  query: { ConsistentRead: true },
+  queryItems: { ConsistentRead: true },
+  queryAllItems: { ConsistentRead: true },
+});
 ```
 
 ## Usage Examples
@@ -256,7 +275,7 @@ const id4 = await getAscendingId({
 console.log(id4); // "00000010"
 ```
 
-## Why should I use this?
+## What are the benefits and why should I use it?
 
 Generally it makes it easier to interact with the dynamodb from AWS. Here are some before and after examples using the new aws-sdk v3:
 
@@ -377,7 +396,7 @@ const result = await updateItem(
 ### Setup
 
 Requires environment variables to be present for the tests to successfully connect to dynamodb tables. You can find a list of required environment variables here:
-[./test/setup/setup-each.js](./test/setup/setup-each.js)
+[.env.template](.env.template)
 
 They can be obtained using the **template.yml** which can be deployed on aws using:
 
