@@ -15,16 +15,13 @@ export declare interface DynamoDBFixes {
   unmarshallOptions?: unmarshallOptions;
 }
 
-const defaults = {
-  disableConsistantReadWhenQueryingIndexes: {
+const defaults: DynamoDBFixes = Object.freeze({
+  disableConsistantReadWhenUsingIndexes: {
     enabled: true,
   },
-  marshallOptions: {
-    removeUndefinedValues: true,
-  },
-};
+});
 
-let fixes: DynamoDBFixes = defaults;
+let fixes = defaults;
 
 export const initFixes = (fixesConfig: DynamoDBFixes) => {
   fixes = fixesConfig;

@@ -26,14 +26,16 @@ describe("Fixes workflows", () => {
   });
 
   it("should init fixes", () => {
-    expect(getFixes().marshallOptions?.removeUndefinedValues).toEqual(true);
+    expect(getFixes().disableConsistantReadWhenUsingIndexes?.enabled).toEqual(
+      true
+    );
 
     initFixes({
       disableConsistantReadWhenUsingIndexes: {
         enabled: true,
       },
       marshallOptions: {
-        removeUndefinedValues: false,
+        removeUndefinedValues: true,
       },
     });
 
@@ -42,7 +44,7 @@ describe("Fixes workflows", () => {
     expect(newFixes.disableConsistantReadWhenUsingIndexes.enabled).toEqual(
       true
     );
-    expect(newFixes.marshallOptions.removeUndefinedValues).toEqual(false);
+    expect(newFixes.marshallOptions.removeUndefinedValues).toEqual(true);
   });
 
   it("should crash when querying with ConsistantRead and GSIs", async () => {
