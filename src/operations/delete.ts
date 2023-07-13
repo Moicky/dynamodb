@@ -6,14 +6,19 @@ import {
   DeleteItemCommandOutput,
 } from "@aws-sdk/client-dynamodb";
 
-import { client, getDefaultTable, withDefaults } from "../lib/client";
-import { splitEvery, stripKey } from "../lib/helpers";
+import {
+  getClient,
+  getDefaultTable,
+  splitEvery,
+  stripKey,
+  withDefaults,
+} from "../lib";
 
 export async function deleteItem(
   key: any,
   args: Partial<DeleteItemCommandInput> = {}
 ): Promise<DeleteItemCommandOutput> {
-  return client.send(
+  return getClient().send(
     new DeleteItemCommand({
       Key: stripKey(key, args),
       ...withDefaults(args, "deleteItem"),
@@ -50,7 +55,7 @@ export async function deleteItems(
 
     const table = args?.TableName || getDefaultTable();
     for (const batch of batches) {
-      await client
+      await getClient()
         .send(
           new BatchWriteItemCommand({
             RequestItems: {

@@ -1,6 +1,6 @@
 require("dotenv/config");
 
-const { client, getDefaultTable, initSchema } = require("../dist");
+const { getClient, getDefaultTable, initSchema } = require("../dist");
 
 initSchema({
   [process.env.DEFAULT_TABLE]: {
@@ -18,6 +18,6 @@ describe("DynamoDB Setup", () => {
   });
 
   it("should have created a DynamoDB client", () => {
-    expect(client).toBeDefined();
+    expect(getClient()).toBeDefined();
   });
 });

@@ -1,14 +1,29 @@
-import { GetItemCommandInput } from "@aws-sdk/client-dynamodb";
+import { GetItemCommand, GetItemCommandInput } from "@aws-sdk/client-dynamodb";
 
-import { getDefaultTable, getTableSchema } from "../lib/client";
-import { getItem } from "./get";
+import {
+  getClient,
+  getDefaultTable,
+  getTableSchema,
+  stripKey,
+  withDefaults,
+} from "../lib";
 import { queryItems } from "./query";
 
 export async function itemExists(
   key: any,
   args: Partial<GetItemCommandInput> = {}
 ) {
-  return !!(await getItem(key, args));
+  args = withDefaults(args, "itemExists");
+
+  return getClient()
+    .send(
+      new GetItemCommand({
+        Key: stripKey(key, args),
+        ...args,
+        TableName: args?.TableName || getDefaultTable(),
+      })
+    )
+    .then((res) => !!res?.Item);
 }
 
 export async function getAscendingId({
@@ -30,7 +45,7 @@ export async function getAscendingId({
 
   if (!keySchemaHash) {
     throw new Error(
-      `Cannot generate new ID: keySchemaHash is missing, expected '${hash}'`
+      `[@moicky/dynamodb]: Cannot generate new ID: keySchemaHash is missing, expected '${hash}'`
     );
   }
   let lastId = "0";

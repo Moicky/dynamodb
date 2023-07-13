@@ -3,21 +3,26 @@ import {
   QueryCommandInput,
   QueryCommandOutput,
 } from "@aws-sdk/client-dynamodb";
-import { unmarshall } from "@aws-sdk/util-dynamodb";
 
-import { client, getDefaultTable, withDefaults } from "../lib/client";
 import {
   getAttributeNames,
   getAttributeValues,
   getAttributesFromExpression,
-} from "../lib/helpers";
+  getClient,
+  getDefaultTable,
+  unmarshallWithOptions,
+  withDefaults,
+  withFixes,
+} from "../lib";
 
 async function _query(
   keyCondition: string,
   key: any,
   args: Partial<QueryCommandInput> = {}
 ): Promise<QueryCommandOutput> {
-  return client.send(
+  args = withFixes(args);
+
+  return getClient().send(
     new QueryCommand({
       KeyConditionExpression: keyCondition,
       ExpressionAttributeValues: getAttributeValues(key, [
@@ -51,7 +56,7 @@ export async function queryItems(
 
   return _query(keyCondition, key, args).then((res) =>
     (res?.Items || [])
-      .map((item) => item && unmarshall(item))
+      .map((item) => item && unmarshallWithOptions(item))
       .filter((item) => item)
   );
 }
@@ -77,6 +82,6 @@ export async function queryAllItems(
     }
   }
   return (data?.Items || [])
-    .map((item) => item && unmarshall(item))
+    .map((item) => item && unmarshallWithOptions(item))
     .filter((item) => item);
 }

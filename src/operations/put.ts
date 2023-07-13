@@ -6,10 +6,15 @@ import {
   PutItemCommandInput,
   PutItemCommandOutput,
 } from "@aws-sdk/client-dynamodb";
-import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 
-import { client, getDefaultTable, withDefaults } from "../lib/client";
-import { splitEvery } from "../lib/helpers";
+import {
+  getClient,
+  getDefaultTable,
+  marshallWithOptions,
+  splitEvery,
+  unmarshallWithOptions,
+  withDefaults,
+} from "../lib";
 
 export async function putItem(
   data: any,
@@ -20,15 +25,17 @@ export async function putItem(
   if (!Object.keys(data).includes("createdAt")) {
     data.createdAt = Date.now();
   }
-  return client
+  return getClient()
     .send(
       new PutItemCommand({
-        Item: marshall(data),
+        Item: marshallWithOptions(data),
         ...args,
         TableName: args?.TableName || getDefaultTable(),
       })
     )
-    .then((res) => (args?.ReturnValues ? unmarshall(res?.Attributes) : res));
+    .then((res) =>
+      args?.ReturnValues ? unmarshallWithOptions(res?.Attributes) : res
+    );
 }
 
 export async function putItems(
@@ -54,13 +61,13 @@ export async function putItems(
 
     const table = args?.TableName || getDefaultTable();
     for (const batch of batches) {
-      await client
+      await getClient()
         .send(
           new BatchWriteItemCommand({
             RequestItems: {
               [table]: batch.map((item: any) => ({
                 PutRequest: {
-                  Item: marshall(item),
+                  Item: marshallWithOptions(item),
                 },
               })),
             },

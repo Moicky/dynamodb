@@ -1,6 +1,5 @@
-import { marshall } from "@aws-sdk/util-dynamodb";
-
-import { getTableSchema } from "../lib/client";
+import { marshallWithOptions } from "./fixes";
+import { getTableSchema } from "./schemas";
 
 // Since dynamo only accepts key atrtributes which are described in table schema
 // we remove any other attributes from the item if they are present and passed as
@@ -8,7 +7,7 @@ import { getTableSchema } from "../lib/client";
 
 export function stripKey(key: any, args?: { TableName?: string }) {
   const { hash, range } = getTableSchema(args?.TableName);
-  return marshall({
+  return marshallWithOptions({
     [hash]: key[hash],
     ...(range && { [range]: key[range] }),
   }) as Record<string, any>;
@@ -23,7 +22,7 @@ export function splitEvery<T>(items: T[], limit = 25) {
 }
 
 export function getAttributeValues(key: any, attributesToGet?: string[]) {
-  return marshall(
+  return marshallWithOptions(
     (attributesToGet || Object.keys(key)).reduce((acc, keyName) => {
       acc[`:${keyName}`] = key[keyName];
       return acc;

@@ -6,10 +6,16 @@ import {
   ScanCommand,
   ScanCommandInput,
 } from "@aws-sdk/client-dynamodb";
-import { unmarshall } from "@aws-sdk/util-dynamodb";
 
-import { client, getDefaultTable, withDefaults } from "../lib/client";
-import { splitEvery, stripKey } from "../lib/helpers";
+import {
+  getClient,
+  getDefaultTable,
+  splitEvery,
+  stripKey,
+  unmarshallWithOptions,
+  withDefaults,
+  withFixes,
+} from "../lib";
 
 export async function getItem(
   key: any,
@@ -17,7 +23,7 @@ export async function getItem(
 ): Promise<Record<string, any> | undefined> {
   args = withDefaults(args, "getItem");
 
-  return client
+  return getClient()
     .send(
       new GetItemCommand({
         Key: stripKey(key, args),
@@ -25,7 +31,7 @@ export async function getItem(
         TableName: args?.TableName || getDefaultTable(),
       })
     )
-    .then((res) => res?.Item && unmarshall(res.Item));
+    .then((res) => res?.Item && unmarshallWithOptions(res.Item));
 }
 
 export async function getItems(
@@ -67,7 +73,7 @@ export async function getItems(
 
   await Promise.all(
     batches.map(async (batch) => {
-      await client
+      await getClient()
         .send(
           new BatchGetItemCommand({
             RequestItems: {
@@ -88,7 +94,9 @@ export async function getItems(
               retry + 1
             ).then((items) => allItemsFromBatch.concat(items));
           }
-          return allItemsFromBatch.map((item) => item && unmarshall(item));
+          return allItemsFromBatch.map(
+            (item) => item && unmarshallWithOptions(item)
+          );
         })
         .then((items) => results.push(...items));
     })
@@ -108,14 +116,16 @@ export async function getItems(
 }
 
 export async function getAllItems(args: Partial<ScanCommandInput> = {}) {
-  args = withDefaults(args, "getAllItems");
+  args = withFixes(withDefaults(args, "getAllItems"));
 
-  return client
+  return getClient()
     .send(
       new ScanCommand({
         ...args,
         TableName: args?.TableName || getDefaultTable(),
       })
     )
-    .then((res) => res.Items.map((item) => item && unmarshall(item)));
+    .then((res) =>
+      res.Items.map((item) => item && unmarshallWithOptions(item))
+    );
 }

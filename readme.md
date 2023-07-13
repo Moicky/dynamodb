@@ -10,10 +10,11 @@ Contains convenience functions for all major dynamodb operations. Requires very 
 - 🎁 Will **automatically marshall and unmarshall** items
 - 📦 Will **group items into batches** to avoid aws limits and improve performance
 - ⏱ Will **automatically** add `createdAt` and `updatedAt` attributes on all items to track their most recent create/update operation timestamp. Example value: `Date.now() -> 1685138436000`
-- 🔄 Will **retry** some operations (getItems, deleteItems) **up to 3 times** on unprocessed items
+- 🔄 Will **retry** `getItems`, `deleteItems` **up to 3 times** on unprocessed items and `queryAllItems` until finished
 - 🔒 When specifying an item using its keySchema, all additional attributes (apart from keySchema attributes from `initSchema` or `PK` & `SK` as default) will be removed to avoid errors
 - 👻 Will **use placeholders** to avoid colliding with [reserved words](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ReservedWords.html) if applicable
-- 🌎 Supports globally defined default arguments for each operation
+- 🌎 Supports globally defined default arguments for each operation ([example](#configuring-global-defaults))
+- 🔨 Supports fixes for several issues with dynamodb ([example](#applying-fixes))
 
 ## Installation
 
@@ -36,7 +37,7 @@ initSchema({
     range: "SK",
   },
   [process.env.SECOND_TABLE]: {
-    hash: "bookId",
+    hash: "somePK",
   },
 });
 ```
@@ -65,26 +66,6 @@ const item = await getItem(
 );
 
 await deleteItem(item, { TableName: process.env.SECOND_TABLE });
-```
-
-## Configuring global defaults
-
-Global defaults can be configured using the `initDefaults` function. This allows to provide but still override every property of the `args` parameter.
-
-Should be called before any DynamoDB operations are performed.
-
-```ts
-import { initDefaults } from "@moicky/dynamodb";
-
-// Enables consistent reads for all DynamoDB operations which support it.
-initDefaults({
-  getItem: { ConsistentRead: true },
-  getAllItems: { ConsistentRead: true },
-
-  query: { ConsistentRead: true },
-  queryItems: { ConsistentRead: true },
-  queryAllItems: { ConsistentRead: true },
-});
 ```
 
 ## Usage Examples
@@ -273,6 +254,60 @@ const id4 = await getAscendingId({
   SK: "Book",
 });
 console.log(id4); // "00000010"
+```
+
+## Configuring global defaults
+
+Global defaults can be configured using the `initDefaults` function. This allows to provide but still override every property of the `args` parameter.
+
+Should be called before any DynamoDB operations are performed.
+
+```ts
+import { initDefaultArguments } from "@moicky/dynamodb";
+
+// Enables consistent reads for all DynamoDB operations which support it.
+initDefaultArguments({
+  getItem: { ConsistentRead: true },
+  getAllItems: { ConsistentRead: true },
+
+  itemExists: { ConsistentRead: true },
+
+  query: { ConsistentRead: true },
+  queryItems: { ConsistentRead: true },
+  queryAllItems: { ConsistentRead: true },
+});
+```
+
+## Applying fixes
+
+Arguments which are passed to [marshall](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/interfaces/_aws_sdk_util_dynamodb.marshallOptions.html) and [unmarshall](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/interfaces/_aws_sdk_util_dynamodb.unmarshallOptions.html) from `@aws-sdk/util-dynamodb` can be configured using
+
+```ts
+import { initFixes } from "@moicky/dynamodb";
+
+initFixes({
+  marshallOptions: {
+    removeUndefinedValues: true,
+  },
+  unmarshallOptions: {
+    wrapNumbers: true,
+  },
+});
+```
+
+When using `GlobalSecondaryIndexes`, DynamoDb does not support using `ConsistantRead`. This is fixed by default (`ConsistantRead` is turned off) and can be configured using:
+
+```ts
+import { initFixes } from "@moicky/dynamodb";
+
+initFixes({
+  disableConsistantReadWhenUsingIndexes: {
+    enabled: true, // default,
+
+    // Won't disable ConsistantRead if IndexName is specified here.
+    stillUseOnLocalIndexes: ["localIndexName1", "localIndexName1"],
+  },
+});
 ```
 
 ## What are the benefits and why should I use it?

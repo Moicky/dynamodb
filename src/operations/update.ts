@@ -3,15 +3,17 @@ import {
   UpdateItemCommandInput,
   UpdateItemCommandOutput,
 } from "@aws-sdk/client-dynamodb";
-import { unmarshall } from "@aws-sdk/util-dynamodb";
 
-import { client, getDefaultTable, withDefaults } from "../lib/client";
 import {
   getAttributeNames,
   getAttributeValues,
   getAttributesFromExpression,
+  getClient,
+  getDefaultTable,
   stripKey,
-} from "../lib/helpers";
+  unmarshallWithOptions,
+  withDefaults,
+} from "../lib";
 
 export async function updateItem(
   key: any,
@@ -39,7 +41,7 @@ export async function updateItem(
   const UpdateExpression =
     "SET " + attributesToUpdate.map((key) => `#${key} = :${key}`).join(", ");
 
-  return client
+  return getClient()
     .send(
       new UpdateItemCommand({
         Key: stripKey(key, args),
@@ -57,7 +59,7 @@ export async function updateItem(
       })
     )
     .then((res) =>
-      args?.ReturnValues ? unmarshall(res.Attributes) : undefined
+      args?.ReturnValues ? unmarshallWithOptions(res.Attributes) : undefined
     );
 }
 
@@ -71,7 +73,7 @@ export async function removeAttributes(
   const UpdateExpression =
     "REMOVE " + attributes.map((att) => `#${att}`).join(", ");
 
-  return client.send(
+  return getClient().send(
     new UpdateItemCommand({
       Key: stripKey(key, args),
       UpdateExpression,
