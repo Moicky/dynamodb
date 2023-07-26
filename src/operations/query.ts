@@ -70,18 +70,22 @@ export async function queryAllItems(
 
   let data = await _query(keyCondition, key, args);
   while (data.LastEvaluatedKey) {
-    if (data.LastEvaluatedKey) {
+    if (!Object.hasOwn(args, "Limit") || data.Items.length < args?.Limit) {
       let helper = await _query(keyCondition, key, {
         ...args,
         ExclusiveStartKey: data.LastEvaluatedKey,
       });
-      if (helper?.Items && data?.Items) {
+      if (helper?.Items) {
         data.Items.push(...helper.Items);
+      } else {
+        break;
       }
-      data && (data.LastEvaluatedKey = helper.LastEvaluatedKey);
+      data.LastEvaluatedKey = helper.LastEvaluatedKey;
+    } else {
+      break;
     }
   }
   return (data?.Items || [])
     .map((item) => item && unmarshallWithOptions(item))
-    .filter((item) => item);
+    .filter(Boolean);
 }

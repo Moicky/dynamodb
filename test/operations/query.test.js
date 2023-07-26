@@ -41,4 +41,9 @@ describe("query operations", () => {
     expect(items.length).toEqual(100);
     expect(items[0].released).toEqual(2010);
   });
+
+  it("should work with a limit", async () => {
+    const items = await queryAllItems("#PK = :PK", { PK }, { Limit: 10 });
+    expect(items.length).toEqual(10);
+  });
 });
