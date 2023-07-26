@@ -14,6 +14,33 @@ import {
   withDefaults,
 } from "../lib";
 
+/**
+ * Deletes an item from the DynamoDB table using its key schema.
+ * @param key - The item with at least the partition key and the sort key (if applicable) of the item to delete.
+ * @param args - The additional arguments to override or specify for {@link DeleteItemCommandInput}
+ * @returns A promise that resolves to the output of {@link DeleteItemCommandOutput}
+ *
+ * @example
+ * Delete a single item in default table
+ * ```javascript
+ * await deleteItem({
+ *   PK: "User/1",
+ *   SK: "Book/1",
+ *   // fields which are not part of the key schema will be removed
+ *   title: "The Great Gatsby",
+ *   author: "F. Scott Fitzgerald",
+ *   released: 1925,
+ * });
+ * ```
+ * @example
+ * Delete a single item in a different table
+ * ```javascript
+ * await deleteItem(
+ *   { PK: "User/1", SK: "Book/1" },
+ *   { TableName: "AnotherTable" }
+ * );
+ * ```
+ */
 export async function deleteItem(
   key: any,
   args: Partial<DeleteItemCommandInput> = {}
@@ -27,13 +54,47 @@ export async function deleteItem(
   );
 }
 
+type DeleteItemsArgs = Partial<
+  BatchWriteItemCommandInput & {
+    TableName?: string;
+  }
+>;
+
+/**
+ * Deletes unlimited items from the DynamoDB table using their key schema.
+ * @param keys - The items with at least the partition key and the sort key (if applicable) of the items to delete.
+ * @param args - The additional arguments to override or specify for {@link DeleteItemsArgs}
+ * @returns A promise that resolves to void
+ *
+ * @example
+ * Delete items in default table
+ * ```javascript
+ * await deleteItems([
+ *   // fields which are not part of the key schema will be removed
+ *   { PK: "User/1", SK: "Book/1", title: "The Great Gatsby", released: 1925 },
+ *   { PK: "User/1", SK: "Book/2" },
+ *   { PK: "User/1", SK: "Book/3" },
+ *   // ... infinite more items (will be grouped into batches of 25 due to aws limit)
+ *   // and retried up to 3 times
+ * ]);
+ * ```
+ * @example
+ * Delete items in a different table
+ * ```javascript
+ * await deleteItems(
+ *   [
+ *     // fields which are not part of the key schema will be removed
+ *     { PK: "User/1", SK: "Book/1", title: "The Great Gatsby", released: 1925 },
+ *     { PK: "User/1", SK: "Book/2" },
+ *     { PK: "User/1", SK: "Book/3" },
+ *   ],
+ *   { TableName: "AnotherTable" }
+ * );
+ * ```
+ */
 export async function deleteItems(
   keys: any[],
-  args: Partial<
-    BatchWriteItemCommandInput & {
-      TableName?: string;
-    }
-  > = {},
+  args: DeleteItemsArgs = {},
   retry = 0
 ): Promise<void> {
   args = withDefaults(args, "deleteItems");

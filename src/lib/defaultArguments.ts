@@ -39,12 +39,43 @@ export interface OperationArguments {
 
 let defaultArguments: OperationArguments = {};
 
+/**
+ * Initializes the default arguments to use for all operations.
+ * @param args - The new default arguments to use for all operations {@link OperationArguments}
+ * @returns void
+ * @example
+ * Enable consistent reads for all operations which support it:
+ * ```javascript
+ * initDefaultArguments({
+ *   getItem: { ConsistentRead: true },
+ *   getAllItems: { ConsistentRead: true },
+ *   queryPaginatedItems: { ConsistentRead: true, pageSize: 100 },
+ *
+ *   itemExists: { ConsistentRead: true },
+ *
+ *   query: { ConsistentRead: true },
+ *   queryItems: { ConsistentRead: true },
+ *   queryAllItems: { ConsistentRead: true },
+ * });
+ * ```
+ */
 export const initDefaultArguments = (args: OperationArguments) => {
   defaultArguments = args;
 };
 
+/**
+ * Returns the current default arguments used for all operations.
+ * @returns The current default arguments {@link OperationArguments}
+ */
 export const getDefaultArguments = () => defaultArguments;
 
+/**
+ * Returns the current default arguments used for all operations.
+ * @param args - The arguments to override the default arguments with
+ * @param operation - The operation to get the default arguments for
+ * @returns The merged arguments
+ * @private
+ */
 export const withDefaults = <T extends keyof OperationArguments>(
   args: Partial<OperationArguments[T]>,
   operation: T

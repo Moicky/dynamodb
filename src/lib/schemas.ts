@@ -1,8 +1,15 @@
+/**
+ * @property {string} hash - The name of the hash key.
+ * @property {string} [range] - The name of the range key. Only required if the table has a range key.
+ */
 export declare interface KeySchema {
   hash: string;
   range?: string;
 }
 
+/**
+ * @property {string} tableName - The name of the table.
+ */
 export declare interface KeySchemaCollection {
   [tableName: string]: KeySchema;
 }
@@ -10,6 +17,11 @@ export declare interface KeySchemaCollection {
 let initialized = false;
 let tablesSchema: KeySchemaCollection = {};
 
+/**
+ * Initializes the {@link KeySchemaCollection} to use for all operations.
+ * @param schema - The new {@link KeySchemaCollection} to use
+ * @returns The new {@link KeySchemaCollection}
+ */
 export const initSchema = (
   schema: KeySchemaCollection
 ): KeySchemaCollection => {
@@ -32,6 +44,11 @@ export const initSchema = (
   return tablesSchema;
 };
 
+/**
+ * Validates the {@link KeySchemaCollection} to use for all operations.
+ * @param schema - The {@link KeySchemaCollection} to validate
+ * @returns true if the schema is valid
+ */
 export const validateSchema = (schema: KeySchemaCollection) => {
   const tables = Object.keys(schema);
 
@@ -60,6 +77,9 @@ export const validateSchema = (schema: KeySchemaCollection) => {
   return true;
 };
 
+/**
+ * Returns the first table name from the {@link KeySchemaCollection}.
+ */
 export const getDefaultTable = () => {
   if (!initialized) {
     throw new Error("[@moicky/dynamodb]: Schema not initialized");
@@ -67,6 +87,9 @@ export const getDefaultTable = () => {
   return Object.keys(tablesSchema)[0];
 };
 
+/**
+ * Returns the {@link KeySchema} for the given or default table.
+ */
 export const getTableSchema = (tableName?: string): KeySchema => {
   if (!initialized) {
     throw new Error("[@moicky/dynamodb]: Schema not initialized");
@@ -76,8 +99,16 @@ export const getTableSchema = (tableName?: string): KeySchema => {
   return tablesSchema[table] || getDefaultTableSchema();
 };
 
+/**
+ * Returns the default {@link KeySchema}.
+ * @returns The default {@link KeySchema}
+ */
 export const getDefaultTableSchema = (): KeySchema => {
   return { hash: "PK", range: "SK" };
 };
 
+/**
+ * Returns whether the {@link KeySchemaCollection} has been initialized.
+ * @returns true if the {@link KeySchemaCollection} has been initialized
+ */
 export const isInitialized = () => initialized;

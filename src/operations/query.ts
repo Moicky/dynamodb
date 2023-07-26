@@ -16,6 +16,14 @@ import {
   withFixes,
 } from "../lib";
 
+/**
+ * The internal _query function that executes the QueryCommand with given conditions and arguments.
+ * @param keyCondition - The condition for the key in DynamoDB QueryCommand.
+ * @param key - Definitions for the attributes used in keyCondition and FilterExpression
+ * @param args - The additional arguments to override or specify for {@link QueryCommandInput}
+ * @returns A promise that resolves to the output of {@link QueryCommandOutput}
+ * @private
+ */
 async function _query(
   keyCondition: string,
   key: any,
@@ -40,6 +48,22 @@ async function _query(
   );
 }
 
+/**
+ * Query a single item in a DynamoDB table using a key condition.
+ * @param keyCondition - The condition for the key in DynamoDB QueryCommand.
+ * @param key - Definitions for the attributes used in keyCondition and FilterExpression
+ * @param args - The additional arguments to override or specify for {@link QueryCommandInput}
+ * @returns A promise that resolves to the output of {@link QueryCommandOutput}
+ *
+ * @example
+ * Query a single item using a key condition
+ * ```javascript
+ * const booksResponse = await query("#PK = :PK and begins_with(#SK, :SK)", {
+ *   PK: "User/1",
+ *   SK: "Book/",
+ * });
+ * ```
+ */
 export async function query(
   keyCondition: string,
   key: any,
@@ -48,6 +72,22 @@ export async function query(
   return _query(keyCondition, key, withDefaults(args, "query"));
 }
 
+/**
+ * Query multiple items from the DynamoDB table using a key condition and unmarshalls the result.
+ * @param keyCondition - The condition for the key in DynamoDB QueryCommand.
+ * @param key - Definitions for the attributes used in keyCondition and FilterExpression
+ * @param args - The additional arguments to override or specify for {@link QueryCommandInput}
+ * @returns A promise that resolves to an array of unmarshalled items.
+ *
+ * @example
+ * Query multiple items using a key condition
+ * ```javascript
+ * const books = await queryItems("#PK = :PK and begins_with(#SK, :SK)", {
+ *   PK: "User/1",
+ *   SK: "Book/",
+ * });
+ * ```
+ */
 export async function queryItems(
   keyCondition: string,
   key: any,
@@ -62,6 +102,35 @@ export async function queryItems(
   );
 }
 
+/**
+ * Query all items from the DynamoDB table using a key condition and unmarshalls the result.
+ * This function retries until all items are retrieved due to the AWS limit of 1MB per query.
+ * @param keyCondition - The condition for the key in DynamoDB QueryCommand.
+ * @param key - Definitions for the attributes used in keyCondition and FilterExpression
+ * @param args - The additional arguments to override or specify for {@link QueryCommandInput}
+ * @returns A promise that resolves to an array of unmarshalled items.
+ *
+ * @example
+ * Query all items using a key condition
+ * ```javascript
+ * const allBooks = await queryAllItems("#PK = :PK and begins_with(#SK, :SK)", {
+ *   PK: "User/1",
+ *   SK: "Book/",
+ * });
+ * const booksWithFilter = await queryAllItems(
+ *   "#PK = :PK and begins_with(#SK, :SK)", // keyCondition
+ *   {
+ *     // definition for all attributes
+ *     PK: "User/1",
+ *     SK: "Book/",
+ *     from: 1950,
+ *     to: 2000,
+ *   },
+ *   // additional args with FilterExpression for example
+ *   { FilterExpression: "#released BETWEEN :from AND :to" }
+ * );
+ * ```
+ */
 export async function queryAllItems(
   keyCondition: string,
   key: any,
@@ -91,12 +160,25 @@ export async function queryAllItems(
     .filter(Boolean);
 }
 
+/**
+ * The structure for the PaginationPage type.
+ * @property number - The page number. Cannot be set manually.
+ * @property firstKey - The key for the first item on the page.
+ * @property lastKey - The key for the last item on the page.
+ */
 export type PaginationPage = {
   number?: number; // Cannot be set manually
   firstKey: Record<string, any>;
   lastKey: Record<string, any>;
 };
 
+/**
+ * The structure for the PaginationResult type.
+ * @property items - The items on the current page.
+ * @property hasPreviousPage - Whether there is a previous page.
+ * @property hasNextPage - Whether there is a next page.
+ * @property currentPage - The current page.
+ */
 export type PaginationResult = {
   items: Record<string, any>[];
   hasPreviousPage: boolean;
@@ -104,13 +186,46 @@ export type PaginationResult = {
   currentPage: PaginationPage;
 };
 
+/**
+ * The arguments for the queryPaginatedItems function.
+ * @property pageSize - The size of each page.
+ * @property direction - The direction of pagination, 'next' or 'previous'. Default is 'next'.
+ * @property currentPage - The current page.
+ */
 export interface PaginationArgs
   extends Partial<Omit<QueryCommandInput, "Limit">> {
   pageSize: number;
-  direction?: "next" | "previous"; // default: 'next'
+  direction?: "next" | "previous";
   currentPage?: PaginationPage;
 }
 
+/**
+ * Query items from the DynamoDB table using a key condition in a paginated manner.
+ * @param keyCondition - The condition for the key in DynamoDB QueryCommand.
+ * @param key - Definitions for the attributes used in keyCondition and FilterExpression
+ * @param args- The pagination arguments, including pageSize and direction. {@link PaginationArgs}
+ * @returns A promise that resolves to a {@link PaginationResult}.
+ * @example
+ * Query the first page of items using a key condition
+ * ```javascript
+ * const { items, hasNextPage, hasPreviousPage, currentPage } =
+ *   await queryPaginatedItems(
+ *     "#PK = :PK and begins_with(#SK, :SK)",
+ *     { PK: "User/1", SK: "Book/" },
+ *     { pageSize: 100 }
+ *   );
+ * // items: The items on the current page.
+ * // currentPage: { number: 1, firstKey: { ... }, lastKey: { ... } }
+ *
+ * const { items: nextItems, currentPage: nextPage } = await queryPaginatedItems(
+ *   "#PK = :PK and begins_with(#SK, :SK)",
+ *   { PK: "User/1", SK: "Book/" },
+ *   { pageSize: 100, currentPage }
+ * );
+ * // items: The items on the second page.
+ * // currentPage: { number: 2, firstKey: { ... }, lastKey: { ... } }
+ * ```
+ */
 export async function queryPaginatedItems(
   keyCondition: string,
   key: any,

@@ -16,6 +16,24 @@ import {
   withDefaults,
 } from "../lib";
 
+/**
+ * Inserts an item into the DynamoDB table.
+ * @param data - The item to insert into the table.
+ * @param args - The additional arguments to override or specify for {@link PutItemCommandInput}
+ * @returns A promise that resolves to the output of {@link PutItemCommandOutput} or the unmarshalled attributes if 'ReturnValues' is specified in 'args'.
+ *
+ * @example
+ * Put a single item into DynamoDB
+ * ```javascript
+ * await putItem({
+ *   PK: "User/1",
+ *   SK: "Book/1",
+ *   title: "The Great Gatsby",
+ *   author: "F. Scott Fitzgerald",
+ *   released: 1925,
+ * });
+ * ```
+ */
 export async function putItem(
   data: any,
   args: Partial<PutItemCommandInput> = {}
@@ -38,13 +56,36 @@ export async function putItem(
     );
 }
 
+type PutItemsArgs = Partial<
+  BatchWriteItemCommandInput & {
+    TableName?: string;
+  }
+>;
+
+/**
+ * Inserts multiple items into the DynamoDB table.
+ * @param items - The items to insert into the table.
+ * @param args - The additional arguments to override or specify for {@link PutItemsArgs}
+ * @returns A promise that resolves to an array of {@link BatchWriteItemCommandOutput}
+ *
+ * @example
+ * Put multiple items into DynamoDB
+ * ```javascript
+ * await putItems([
+ *   {
+ *     PK: "User/1",
+ *     SK: "Book/1",
+ *     title: "The Great Gatsby",
+ *     author: "F. Scott Fitzgerald",
+ *     released: 1925,
+ *   },
+ *   // ... infinite more items (will be grouped into batches of 25 due to aws limit)
+ * ]);
+ * ```
+ */
 export async function putItems(
   items: any[],
-  args: Partial<
-    BatchWriteItemCommandInput & {
-      TableName?: string;
-    }
-  > = {}
+  args: PutItemsArgs = {}
 ): Promise<BatchWriteItemCommandOutput[]> {
   args = withDefaults(args, "putItems");
 

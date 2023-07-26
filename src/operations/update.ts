@@ -15,6 +15,38 @@ import {
   withDefaults,
 } from "../lib";
 
+/**
+ * Updates an item in DynamoDB. All provided fields are overwritten.
+ *
+ * @param key - The primary key of the item to be updated
+ * @param data - An object containing the data to be updated
+ * @param args - Optional parameters for the {@link UpdateItemCommand}
+ * @returns Returns updated item if ReturnValues argument is set, otherwise undefined
+ *
+ * @example
+ * Update the item and overwrite all supplied fields
+ * ```javascript
+ * await updateItem(
+ *   { PK: "User/1", SK: "Book/1" }, // reference to item
+ *   { description: "A book about a rich guy", author: "F. Scott Fitzgerald" } // fields to update
+ * );
+ *
+ * // Conditionally update an item. 'maxReleased' will not be updated since it is referenced inside the ConditionExpression
+ * await updateItem(
+ *   { PK: "User/1", SK: "Book/1" },
+ *   { released: 2000, maxReleased: 1950 },
+ *   { ConditionExpression: "#released < :maxReleased" }
+ * );
+ *
+ * // Return all attributes of the new item
+ * const newItem = await updateItem(
+ *   { PK: "User/1", SK: "Book/1" },
+ *   { released: 2000 },
+ *   { ReturnValues: "ALL_NEW" }
+ * );
+ * console.log(newItem); // { "PK": "User/1", "SK": "Book/1", "released": 2000 }
+ * ```
+ */
 export async function updateItem(
   key: any,
   data: any,
@@ -63,6 +95,20 @@ export async function updateItem(
     );
 }
 
+/**
+ * Removes specified attributes from an item in DynamoDB.
+ *
+ * @param key - The primary key of the item from which attributes should be removed
+ * @param {string[]} attributes - Array of attribute names to be removed
+ * @param args - Optional parameters for the {@link UpdateItemCommand}
+ * @returns Promise object representing the output of the DynamoDB UpdateItem command
+ *
+ * @example
+ * Remove a specific attribute from an item
+ * ```javascript
+ * await removeAttributes({ PK: "User/1", SK: "Book/1" }, ["description"]);
+ * ```
+ */
 export async function removeAttributes(
   key: any,
   attributes: string[],

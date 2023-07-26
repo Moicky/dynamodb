@@ -17,6 +17,32 @@ import {
   withFixes,
 } from "../lib";
 
+/**
+ * Retrieves an item from the DynamoDB table using its key schema.
+ * @param key - The item with at least the partition key and the sort key (if applicable) of the item to get.
+ * @param args - The additional arguments to override or specify for {@link GetItemCommandInput}
+ * @returns A promise that resolves to the unmarshalled item
+ *
+ * @example
+ * Get a single item
+ * ```javascript
+ * await getItem({
+ *   PK: "User/1",
+ *   SK: "Book/1",
+ *   title: "The Great Gatsby",
+ *   author: "F. Scott Fitzgerald",
+ *   released: 1925,
+ * });
+ * ```
+ * @example
+ * Get a single item in a different table
+ * ```javascript
+ * await getItem(
+ *   { PK: "User/1", SK: "Book/1" },
+ *   { TableName: "AnotherTable" }
+ * );
+ * ```
+ */
 export async function getItem(
   key: any,
   args: Partial<GetItemCommandInput> = {}
@@ -34,13 +60,44 @@ export async function getItem(
     .then((res) => res?.Item && unmarshallWithOptions(res.Item));
 }
 
+type GetItemsArgs = Partial<
+  BatchGetItemCommandInput & {
+    TableName?: string;
+  }
+>;
+
+/**
+ * Retrieves multiple items from the DynamoDB table using their key schema.
+ * @param keys - The items with at least the partition key and the sort key (if applicable) of the items to get.
+ * @param args - The additional arguments to override or specify for {@link GetItemsArgs}
+ * @returns A promise that resolves to an array of unmarshalled items
+ *
+ * @example
+ * Get items in default table
+ * ```javascript
+ * await getItems([
+ *   { PK: "User/1", SK: "Book/1", title: "The Great Gatsby", released: 1925 },
+ *   { PK: "User/1", SK: "Book/2" },
+ *   { PK: "User/1", SK: "Book/3" },
+ *   // ... infinite more items (will be grouped into batches of 100 due to aws limit) and retried up to 3 times
+ * ]);
+ * ```
+ * @example
+ * Get items in a different table
+ * ```javascript
+ * await getItems(
+ *   [
+ *     { PK: "User/1", SK: "Book/1", title: "The Great Gatsby", released: 1925 },
+ *     { PK: "User/1", SK: "Book/2" },
+ *     { PK: "User/1", SK: "Book/3" },
+ *   ],
+ *   { TableName: "AnotherTable" }
+ * );
+ * ```
+ */
 export async function getItems(
   keys: any[],
-  args: Partial<
-    BatchGetItemCommandInput & {
-      TableName?: string;
-    }
-  > = {},
+  args: GetItemsArgs = {},
   retry = 0
 ) {
   args = withDefaults(args, "getItems");
@@ -115,6 +172,24 @@ export async function getItems(
   ) as (Record<string, any> | undefined)[];
 }
 
+/**
+ * Retrieves all items from the DynamoDB table.
+ * @param args - The additional arguments to override or specify for {@link ScanCommandInput}
+ * @returns A promise that resolves to an array of unmarshalled items
+ *
+ * @example
+ * Retrieve all items in default table
+ * ```javascript
+ * await getAllItems();
+ * ```
+ * @example
+ * Retrieve all items in a different table
+ * ```javascript
+ * await getAllItems(
+ *   { TableName: "AnotherTable" }
+ * );
+ * ```
+ */
 export async function getAllItems(args: Partial<ScanCommandInput> = {}) {
   args = withFixes(withDefaults(args, "getAllItems"));
 

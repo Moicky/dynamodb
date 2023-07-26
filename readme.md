@@ -15,6 +15,7 @@ Contains convenience functions for all major dynamodb operations. Requires very 
 - 👻 Will **use placeholders** to avoid colliding with [reserved words](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ReservedWords.html) if applicable
 - 🌎 Supports globally defined default arguments for each operation ([example](#configuring-global-defaults))
 - 🔨 Supports fixes for several issues with dynamodb ([example](#applying-fixes))
+- 📖 Offers a convenient way to use pagination with queries
 
 ## Installation
 
@@ -219,6 +220,24 @@ const booksWithFilter = await queryAllItems(
   // additional args with filterExpression for example
   { FilterExpression: "#released BETWEEN :from AND :to" }
 );
+
+// Pagination
+const { items, hasNextPage, hasPreviousPage, currentPage } =
+  await queryPaginatedItems(
+    "#PK = :PK and begins_with(#SK, :SK)",
+    { PK: "User/1", SK: "Book/" },
+    { pageSize: 100 }
+  );
+// items: The items on the current page.
+// currentPage: { number: 1, firstKey: { ... }, lastKey: { ... } }
+
+const { items: nextItems, currentPage: nextPage } = await queryPaginatedItems(
+  "#PK = :PK and begins_with(#SK, :SK)",
+  { PK: "User/1", SK: "Book/" },
+  { pageSize: 100, currentPage }
+);
+// items: The items on the second page.
+// currentPage: { number: 2, firstKey: { ... }, lastKey: { ... } }
 ```
 
 ### Miscellaneous
