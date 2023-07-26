@@ -10,6 +10,7 @@ import {
   query,
   queryAllItems,
   queryItems,
+  queryPaginatedItems,
   removeAttributes,
   updateItem,
 } from "../operations";
@@ -21,6 +22,7 @@ export interface OperationArguments {
   getItem?: Parameters<typeof getItem>[1];
   getItems?: Parameters<typeof getItems>[1];
   getAllItems?: Parameters<typeof getAllItems>[0];
+  queryPaginatedItems?: Parameters<typeof queryPaginatedItems>[2];
 
   itemExists?: Parameters<typeof itemExists>[1];
 
