@@ -15,8 +15,8 @@ const generateItem = (id) => unwrappedGenerateItem(PK, id);
 describe("query operations", () => {
   beforeAll(async () => {
     let items = [
-      ...Array.from({ length: 100 }, (_, i) => generateItem(i.toString())),
-      ...Array.from({ length: 0 }, (_, i) =>
+      ...Array.from({ length: 500 }, (_, i) => generateItem(i.toString())),
+      ...Array.from({ length: 100 }, (_, i) =>
         generateItem((500 + i).toString())
       ).map((b) => ({ ...b, released: 2010 })),
     ];
