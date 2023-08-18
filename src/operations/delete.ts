@@ -132,7 +132,11 @@ export async function deleteItems(
         .then((res) => {
           if (res?.UnprocessedItems?.[table]?.length) {
             if (retry + 1 > 3) return reject(res);
-            return deleteItems(res.UnprocessedItems[table], args, retry + 1);
+            return deleteItems(
+              res.UnprocessedItems[table].map((d) => d?.DeleteRequest?.Key),
+              { ...args, TableName: table },
+              retry + 1
+            );
           }
         })
         .catch(reject);

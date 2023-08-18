@@ -85,8 +85,11 @@ type PutItemsArgs = Partial<
  */
 export async function putItems(
   items: any[],
-  args: PutItemsArgs = {}
+  args: PutItemsArgs = {},
+  retry = 0
 ): Promise<BatchWriteItemCommandOutput[]> {
+  if (retry > 3) return;
+
   args = withDefaults(args, "putItems");
 
   return new Promise(async (resolve, reject) => {
@@ -115,7 +118,24 @@ export async function putItems(
             ...args,
           })
         )
-        .then((res) => results.push(res))
+        .then((res) => {
+          results.push(res);
+
+          if (res?.UnprocessedItems?.[table]?.length) {
+            if (retry + 1 < 3) {
+              reject(res);
+              return;
+            }
+
+            return putItems(
+              res.UnprocessedItems[table].map((item) =>
+                unmarshallWithOptions(item.PutRequest.Item)
+              ),
+              { ...args, TableName: table },
+              retry + 1
+            );
+          }
+        })
         .catch(reject);
     }
     resolve(results);
