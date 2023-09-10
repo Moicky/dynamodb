@@ -324,7 +324,7 @@ initFixes({
     enabled: true, // default,
 
     // Won't disable ConsistantRead if IndexName is specified here.
-    stillUseOnLocalIndexes: ["localIndexName1", "localIndexName1"],
+    stillUseOnLocalIndexes: ["localIndexName1", "localIndexName2"],
   },
 });
 ```
