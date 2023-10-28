@@ -12,6 +12,8 @@ import {
   queryItems,
   queryPaginatedItems,
   removeAttributes,
+  transactGetItems,
+  transactWriteItems,
   updateItem,
 } from "../operations";
 
@@ -35,6 +37,9 @@ export interface OperationArguments {
 
   updateItem?: Parameters<typeof updateItem>[2];
   removeAttributes?: Parameters<typeof removeAttributes>[2];
+
+  transactGetItems?: Parameters<typeof transactGetItems>[1];
+  transactWriteItems?: Parameters<typeof transactWriteItems>[1];
 }
 
 let defaultArguments: OperationArguments = {};

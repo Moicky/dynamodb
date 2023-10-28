@@ -18,7 +18,7 @@ import {
 
 /**
  * Inserts an item into the DynamoDB table.
- * @param data - The item to insert into the table.
+ * @param item - The item to insert into the table.
  * @param args - The additional arguments to override or specify for {@link PutItemCommandInput}
  * @returns A promise that resolves to the output of {@link PutItemCommandOutput} or the unmarshalled attributes if 'ReturnValues' is specified in 'args'.
  *
@@ -35,18 +35,18 @@ import {
  * ```
  */
 export async function putItem(
-  data: any,
+  item: Record<string, any>,
   args: Partial<PutItemCommandInput> = {}
 ): Promise<PutItemCommandOutput | Record<string, any>> {
   args = withDefaults(args, "putItem");
 
-  if (!Object.keys(data).includes("createdAt")) {
-    data.createdAt = Date.now();
+  if (!Object.keys(item).includes("createdAt")) {
+    item.createdAt = Date.now();
   }
   return getClient()
     .send(
       new PutItemCommand({
-        Item: marshallWithOptions(data),
+        Item: marshallWithOptions(item),
         ...args,
         TableName: args?.TableName || getDefaultTable(),
       })
@@ -84,7 +84,7 @@ type PutItemsArgs = Partial<
  * ```
  */
 export async function putItems(
-  items: any[],
+  items: Record<string, any>[],
   args: PutItemsArgs = {},
   retry = 0
 ): Promise<BatchWriteItemCommandOutput[]> {

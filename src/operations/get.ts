@@ -44,7 +44,7 @@ import {
  * ```
  */
 export async function getItem(
-  key: any,
+  key: Record<string, any>,
   args: Partial<GetItemCommandInput> = {}
 ): Promise<Record<string, any> | undefined> {
   args = withDefaults(args, "getItem");
@@ -96,7 +96,7 @@ type GetItemsArgs = Partial<
  * ```
  */
 export async function getItems(
-  keys: any[],
+  keys: Record<string, any>[],
   args: GetItemsArgs = {},
   retry = 0
 ) {

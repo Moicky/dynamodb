@@ -48,8 +48,8 @@ import {
  * ```
  */
 export async function updateItem(
-  key: any,
-  data: any,
+  key: Record<string, any>,
+  data: Record<string, any>,
   args: Partial<UpdateItemCommandInput> = {}
 ): Promise<undefined | Record<string, any>> {
   args = withDefaults(args, "updateItem");
@@ -110,7 +110,7 @@ export async function updateItem(
  * ```
  */
 export async function removeAttributes(
-  key: any,
+  key: Record<string, any>,
   attributes: string[],
   args: Partial<UpdateItemCommandInput> = {}
 ): Promise<UpdateItemCommandOutput> {

@@ -23,7 +23,7 @@ import { queryItems } from "./query";
  * ```
  */
 export async function itemExists(
-  key: any,
+  key: Record<string, any>,
   args: Partial<GetItemCommandInput> = {}
 ) {
   args = withDefaults(args, "itemExists");
