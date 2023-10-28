@@ -42,7 +42,7 @@ import {
  * ```
  */
 export async function deleteItem(
-  key: any,
+  key: Record<string, any>,
   args: Partial<DeleteItemCommandInput> = {}
 ): Promise<DeleteItemCommandOutput> {
   return getClient().send(
@@ -93,7 +93,7 @@ type DeleteItemsArgs = Partial<
  * ```
  */
 export async function deleteItems(
-  keys: any[],
+  keys: Record<string, any>[],
   args: DeleteItemsArgs = {},
   retry = 0
 ): Promise<void> {

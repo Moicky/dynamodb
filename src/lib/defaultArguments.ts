@@ -12,6 +12,8 @@ import {
   queryItems,
   queryPaginatedItems,
   removeAttributes,
+  transactGetItems,
+  transactWriteItems,
   updateItem,
 } from "../operations";
 
@@ -22,7 +24,6 @@ export interface OperationArguments {
   getItem?: Parameters<typeof getItem>[1];
   getItems?: Parameters<typeof getItems>[1];
   getAllItems?: Parameters<typeof getAllItems>[0];
-  queryPaginatedItems?: Parameters<typeof queryPaginatedItems>[2];
 
   itemExists?: Parameters<typeof itemExists>[1];
 
@@ -32,9 +33,13 @@ export interface OperationArguments {
   query?: Parameters<typeof query>[2];
   queryItems?: Parameters<typeof queryItems>[2];
   queryAllItems?: Parameters<typeof queryAllItems>[2];
+  queryPaginatedItems?: Parameters<typeof queryPaginatedItems>[2];
 
   updateItem?: Parameters<typeof updateItem>[2];
   removeAttributes?: Parameters<typeof removeAttributes>[2];
+
+  transactGetItems?: Parameters<typeof transactGetItems>[1];
+  transactWriteItems?: Parameters<typeof transactWriteItems>[1];
 }
 
 let defaultArguments: OperationArguments = {};
@@ -49,13 +54,13 @@ let defaultArguments: OperationArguments = {};
  * initDefaultArguments({
  *   getItem: { ConsistentRead: true },
  *   getAllItems: { ConsistentRead: true },
- *   queryPaginatedItems: { ConsistentRead: true, pageSize: 100 },
  *
  *   itemExists: { ConsistentRead: true },
  *
  *   query: { ConsistentRead: true },
  *   queryItems: { ConsistentRead: true },
  *   queryAllItems: { ConsistentRead: true },
+ *   queryPaginatedItems: { ConsistentRead: true, pageSize: 100 },
  * });
  * ```
  */

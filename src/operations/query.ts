@@ -26,7 +26,7 @@ import {
  */
 async function _query(
   keyCondition: string,
-  key: any,
+  key: Record<string, any>,
   args: Partial<QueryCommandInput> = {}
 ): Promise<QueryCommandOutput> {
   args = withFixes(args);
@@ -66,7 +66,7 @@ async function _query(
  */
 export async function query(
   keyCondition: string,
-  key: any,
+  key: Record<string, any>,
   args?: Partial<QueryCommandInput>
 ): Promise<QueryCommandOutput> {
   return _query(keyCondition, key, withDefaults(args, "query"));
@@ -90,7 +90,7 @@ export async function query(
  */
 export async function queryItems(
   keyCondition: string,
-  key: any,
+  key: Record<string, any>,
   args: Partial<QueryCommandInput> = {}
 ): Promise<Record<string, any>[]> {
   args = withDefaults(args, "queryItems");
@@ -133,7 +133,7 @@ export async function queryItems(
  */
 export async function queryAllItems(
   keyCondition: string,
-  key: any,
+  key: Record<string, any>,
   args: Partial<QueryCommandInput> = {}
 ): Promise<Record<string, any>[]> {
   args = withDefaults(args, "queryAllItems");
@@ -228,7 +228,7 @@ export interface PaginationArgs
  */
 export async function queryPaginatedItems(
   keyCondition: string,
-  key: any,
+  key: Record<string, any>,
   args: PaginationArgs
 ): Promise<PaginationResult> {
   args = withDefaults(args, "queryPaginatedItems");

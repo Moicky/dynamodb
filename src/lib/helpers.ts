@@ -10,7 +10,7 @@ export function stripKey(key: any, args?: { TableName?: string }) {
   return marshallWithOptions({
     [hash]: key[hash],
     ...(range && { [range]: key[range] }),
-  }) as Record<string, any>;
+  });
 }
 
 export function splitEvery<T>(items: T[], limit = 25) {
@@ -27,14 +27,17 @@ export function getAttributeValues(key: any, attributesToGet?: string[]) {
       acc[`:${keyName}`] = key[keyName];
       return acc;
     }, {})
-  ) as Record<string, any>;
+  );
 }
 
 export function getAttributeNames(key: any, attributesToGet?: string[]) {
-  return (attributesToGet || Object.keys(key)).reduce((acc, keyName) => {
-    acc[`#${keyName}`] = keyName;
-    return acc;
-  }, {} as Record<string, string>);
+  return (attributesToGet || Object.keys(key)).reduce<Record<string, string>>(
+    (acc, keyName) => {
+      acc[`#${keyName}`] = keyName;
+      return acc;
+    },
+    {}
+  );
 }
 
 export function getAttributesFromExpression(expression: string, prefix = "#") {
