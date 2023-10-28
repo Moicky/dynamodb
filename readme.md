@@ -16,6 +16,7 @@ Contains convenience functions for all major dynamodb operations. Requires very 
 - 🌎 Supports globally defined default arguments for each operation ([example](#configuring-global-defaults))
 - 🔨 Supports fixes for several issues with dynamodb ([example](#applying-fixes))
 - 📖 Offers a convenient way to use pagination with queries
+- 🔨 Supports transactGetItems & transactWriteItems
 
 ## Installation
 
