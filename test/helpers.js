@@ -1,4 +1,4 @@
-module.exports.generateItem = (namespace, id) => ({
+module.exports.generateItem = (namespace, id, isRented = false) => ({
   PK: namespace,
   SK: `Book/${id}`,
   title: "The Great Gatsby",
@@ -7,4 +7,5 @@ module.exports.generateItem = (namespace, id) => ({
   genre: "Novel",
   pages: 218,
   stars: 5,
+  isRented,
 });

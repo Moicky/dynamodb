@@ -17,7 +17,7 @@ import {
   getDefaultTable,
   marshallWithOptions,
   unmarshallWithOptions,
-  withDefaults,
+  withDefaults, stripKey,
 } from "../lib";
 
 type TransactItem = {
@@ -149,7 +149,7 @@ function handleConditionCheck(
 
   return {
     ConditionCheck: {
-      Key: marshallWithOptions(key),
+      Key: stripKey(key, { TableName: rest.TableName || args.table}),
       ...handleExpressionAttributes(rest, conditionData),
       ...rest,
       TableName: rest.TableName || args.table,
@@ -161,13 +161,14 @@ function handlePutItem(
   params: TransactItem["Put"],
   args: BaseArgs
 ): { Put: TransactWriteItem["Put"] } {
-  params.item.createdAt ??= args.now;
+  const populatedData = structuredClone(params.item)
+  populatedData.createdAt ??= args.now;
 
   const { item, conditionData, ...rest } = params;
 
   return {
     Put: {
-      Item: marshallWithOptions(params.item),
+      Item: marshallWithOptions(populatedData),
       ...handleExpressionAttributes(rest, conditionData),
       ...rest,
       TableName: rest.TableName || args.table,
@@ -183,7 +184,7 @@ function handleDeleteItem(
 
   return {
     Delete: {
-      Key: marshallWithOptions(key),
+      Key: stripKey(key, { TableName: rest.TableName || args.table }),
       ...handleExpressionAttributes(rest, conditionData),
       ...rest,
       TableName: rest.TableName || args.table,
@@ -196,22 +197,26 @@ function handleUpdateItem(
   args: BaseArgs
 ): { Update: TransactWriteItem["Update"] } {
   const { key, updateData, conditionData, ...rest } = params;
-  const mergedData = { ...updateData, ...conditionData };
 
-  updateData.updatedAt ??= args.now;
+  const populatedData = structuredClone(updateData)
+  populatedData.updatedAt ??= args.now;
+
+  const mergedData = { ...populatedData, ...conditionData };
 
   const UpdateExpression =
     "SET " +
-    Object.keys(updateData)
+    Object.keys(populatedData)
       .map((key) => `#${key} = :${key}`)
       .join(", ");
 
   return {
     Update: {
-      Key: marshallWithOptions(key),
+      Key: stripKey(key, { TableName: rest.TableName || args.table }),
       UpdateExpression,
       ExpressionAttributeValues: getAttributeValues(mergedData),
-      ExpressionAttributeNames: getAttributeNames(mergedData),
+      ExpressionAttributeNames: getAttributeNames({}, getAttributesFromExpression(
+              rest.ConditionExpression || ""
+      ).concat(Object.keys(populatedData))),
       ...rest,
       TableName: rest.TableName || args.table,
     },
