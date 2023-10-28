@@ -1,11 +1,11 @@
 import {
   ConditionCheck,
   Delete,
+  ItemCollectionMetrics,
   Put,
   TransactWriteItem,
   TransactWriteItemsCommand,
   TransactWriteItemsCommandInput,
-  TransactWriteItemsCommandOutput,
   Update,
 } from "@aws-sdk/client-dynamodb";
 
@@ -17,6 +17,7 @@ import {
   getDefaultTable,
   marshallWithOptions,
   splitEvery,
+  unmarshallWithOptions,
   withDefaults,
 } from "../lib";
 
@@ -51,10 +52,14 @@ type TransactWriteItemsInput = Partial<
   TableName?: string;
 };
 
+type ResponseItem = Pick<ItemCollectionMetrics, "SizeEstimateRangeGB"> & {
+  Key: Record<string, any>;
+};
+
 export async function transactWriteItems(
   transactItems: TransactItem[],
   args: TransactWriteItemsInput = {}
-): Promise<TransactWriteItemsCommandOutput[]> {
+): Promise<Record<string, ResponseItem[]>> {
   return new Promise(async (resolve, reject) => {
     args = withDefaults(args, "transactWriteItems");
 
@@ -78,13 +83,28 @@ export async function transactWriteItems(
     });
 
     const batches = splitEvery(populatedItems, 100);
-    const results = [];
+    const results: Record<string, ResponseItem[]> = {};
 
     for (const batch of batches) {
       // should probably not be parallel due to conditions & atomicity
       await getClient()
         .send(new TransactWriteItemsCommand({ TransactItems: batch, ...args }))
-        .then((res) => results.push(res))
+        .then((res) => {
+          Object.entries(res.ItemCollectionMetrics || {}).forEach(
+            ([tableName, metrics]) => {
+              const unmarshalledMetrics = metrics.map((metric) => ({
+                Key: unmarshallWithOptions(metric.ItemCollectionKey || {}),
+                SizeEstimateRangeGB: metric.SizeEstimateRangeGB,
+              }));
+
+              if (!results[tableName]) {
+                results[tableName] = [];
+              }
+
+              results[tableName].push(...unmarshalledMetrics);
+            }
+          );
+        })
         .catch(reject);
     }
 

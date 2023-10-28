@@ -8,8 +8,8 @@ import {
 import {
   getClient,
   getDefaultTable,
-  marshallWithOptions,
   splitEvery,
+  stripKey,
   unmarshallWithOptions,
   withDefaults,
 } from "../lib";
@@ -40,14 +40,17 @@ export function transactGetItems(
       await getClient()
         .send(
           new TransactGetItemsCommand({
-            TransactItems: batch.map((item) => ({
-              Get: {
-                Key: marshallWithOptions(item),
-                TableName: item.TableName || defaultTable,
-                ExpressionAttributeNames: item.ExpressionAttributeNames,
-                ProjectionExpression: item.ProjectionExpression,
-              },
-            })),
+            TransactItems: batch.map((item) => {
+              const table = item.TableName || defaultTable;
+              return {
+                Get: {
+                  Key: stripKey(item.key, { TableName: table }),
+                  TableName: table,
+                  ExpressionAttributeNames: item.ExpressionAttributeNames,
+                  ProjectionExpression: item.ProjectionExpression,
+                },
+              };
+            }),
             ...otherArgs,
           })
         )
