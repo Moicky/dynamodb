@@ -14,6 +14,41 @@ import {
   withDefaults,
 } from "../lib";
 
+/**
+ * Performs a TransactGetItems operation against DynamoDB. This allows you to retrieve many items at once.
+ * @param keys - Array of items to retrieve. Each item requires a `key` property, with at least the partition and the sort key (according to the table definition).
+ * @param args - The additional arguments to override or specify for {@link TransactGetItemsCommandInput}
+ * @returns A promise that resolves to an unmarshalled items array
+ *
+ * @example
+ * Get items from the default-table
+ * ```javascript
+ * const items = await transactGetItems([
+ *    { key: { PK: "User/1", SK: "Book/1", title: "The Great Gatsby", released: 1925 }},
+ *    { key: { PK: "User/1", SK: "Book/2" }},
+ *    { key: { PK: "User/1", SK: "Book/3" }},
+ * ]);
+ * ```
+ * @example
+ * Get items from a different tables
+ * ```javascript
+ * const items = await transactGetItems([
+ *    { TableName: "yourTable", key: { PK: "User/1", SK: "Book/2" }},
+ *    { TableName: "yourOtherTable", key: { PK: "User/1", SK: "Book/3" }},
+ * ]);
+ * ```
+ * @example
+ * Get all items from a non-default table
+ * ```javascript
+ * const items = await transactGetItems(
+ *   [
+ *     { key: { PK: "User/1", SK: "Book/2" } },
+ *     { key: { PK: "User/1", SK: "Book/3" } },
+ *   ],
+ *   { TableName: "yourTable" }
+ * );
+ * ```
+ */
 export function transactGetItems(
   keys: Array<
     Omit<Get, "TableName" | "Key"> & {
