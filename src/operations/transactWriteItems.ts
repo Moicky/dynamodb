@@ -16,7 +16,6 @@ import {
   getClient,
   getDefaultTable,
   marshallWithOptions,
-  splitEvery,
   unmarshallWithOptions,
   withDefaults,
 } from "../lib";
@@ -63,6 +62,12 @@ export async function transactWriteItems(
   return new Promise(async (resolve, reject) => {
     args = withDefaults(args, "transactWriteItems");
 
+    if (transactItems.length > 100) {
+      throw new Error(
+        "[@moicky/dynamodb]: TransactWriteItems can only handle up to 100 items"
+      );
+    }
+
     const now = Date.now();
     const table = args.TableName || getDefaultTable();
 
@@ -82,33 +87,33 @@ export async function transactWriteItems(
       }
     });
 
-    const batches = splitEvery(populatedItems, 100);
-    const results: Record<string, ResponseItem[]> = {};
-
-    for (const batch of batches) {
-      // should probably not be parallel due to conditions & atomicity
-      await getClient()
-        .send(new TransactWriteItemsCommand({ TransactItems: batch, ...args }))
-        .then((res) => {
-          Object.entries(res.ItemCollectionMetrics || {}).forEach(
-            ([tableName, metrics]) => {
-              const unmarshalledMetrics = metrics.map((metric) => ({
-                Key: unmarshallWithOptions(metric.ItemCollectionKey || {}),
-                SizeEstimateRangeGB: metric.SizeEstimateRangeGB,
-              }));
-
-              if (!results[tableName]) {
-                results[tableName] = [];
-              }
-
-              results[tableName].push(...unmarshalledMetrics);
-            }
-          );
+    return getClient()
+      .send(
+        new TransactWriteItemsCommand({
+          TransactItems: populatedItems,
+          ...args,
         })
-        .catch(reject);
-    }
+      )
+      .then((res) => {
+        const results: Record<string, ResponseItem[]> = {};
 
-    resolve(results);
+        Object.entries(res.ItemCollectionMetrics || {}).forEach(
+          ([tableName, metrics]) => {
+            const unmarshalledMetrics = metrics.map((metric) => ({
+              Key: unmarshallWithOptions(metric.ItemCollectionKey || {}),
+              SizeEstimateRangeGB: metric.SizeEstimateRangeGB,
+            }));
+
+            if (!results[tableName]) {
+              results[tableName] = [];
+            }
+
+            results[tableName].push(...unmarshalledMetrics);
+          }
+        );
+        resolve(results);
+      })
+      .catch(reject);
   });
 }
 
