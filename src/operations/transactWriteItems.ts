@@ -16,8 +16,9 @@ import {
   getClient,
   getDefaultTable,
   marshallWithOptions,
+  stripKey,
   unmarshallWithOptions,
-  withDefaults, stripKey,
+  withDefaults,
 } from "../lib";
 
 type TransactItem = {
@@ -149,7 +150,7 @@ function handleConditionCheck(
 
   return {
     ConditionCheck: {
-      Key: stripKey(key, { TableName: rest.TableName || args.table}),
+      Key: stripKey(key, { TableName: rest.TableName || args.table }),
       ...handleExpressionAttributes(rest, conditionData),
       ...rest,
       TableName: rest.TableName || args.table,
@@ -161,7 +162,7 @@ function handlePutItem(
   params: TransactItem["Put"],
   args: BaseArgs
 ): { Put: TransactWriteItem["Put"] } {
-  const populatedData = structuredClone(params.item)
+  const populatedData = structuredClone(params.item);
   populatedData.createdAt ??= args.now;
 
   const { item, conditionData, ...rest } = params;
@@ -198,7 +199,7 @@ function handleUpdateItem(
 ): { Update: TransactWriteItem["Update"] } {
   const { key, updateData, conditionData, ...rest } = params;
 
-  const populatedData = structuredClone(updateData)
+  const populatedData = structuredClone(updateData);
   populatedData.updatedAt ??= args.now;
 
   const mergedData = { ...populatedData, ...conditionData };
@@ -214,9 +215,12 @@ function handleUpdateItem(
       Key: stripKey(key, { TableName: rest.TableName || args.table }),
       UpdateExpression,
       ExpressionAttributeValues: getAttributeValues(mergedData),
-      ExpressionAttributeNames: getAttributeNames({}, getAttributesFromExpression(
-              rest.ConditionExpression || ""
-      ).concat(Object.keys(populatedData))),
+      ExpressionAttributeNames: getAttributeNames(
+        {},
+        getAttributesFromExpression(rest.ConditionExpression || "").concat(
+          Object.keys(populatedData)
+        )
+      ),
       ...rest,
       TableName: rest.TableName || args.table,
     },
