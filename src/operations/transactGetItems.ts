@@ -10,6 +10,7 @@ import {
   getDefaultTable,
   marshallWithOptions,
   splitEvery,
+  unmarshallWithOptions,
   withDefaults,
 } from "../lib";
 
@@ -25,29 +26,42 @@ export function transactGetItems(
       TableName?: string;
     }
   >
-): Promise<TransactGetItemsCommandOutput[]> {
+): Promise<Array<Record<string, any> | undefined>> {
   return new Promise(async (resolve, reject) => {
     args = withDefaults(args, "transactGetItems");
+    const { TableName, ...otherArgs } = args;
 
-    const TableName = args?.TableName || getDefaultTable();
+    const defaultTable = TableName || getDefaultTable();
 
     const batches = splitEvery(keys, 100);
-    const results = [];
+    const results: TransactGetItemsCommandOutput[] = [];
 
     for (const batch of batches) {
       await getClient()
         .send(
           new TransactGetItemsCommand({
             TransactItems: batch.map((item) => ({
-              Get: { ...item, Key: marshallWithOptions(item), TableName },
+              Get: {
+                Key: marshallWithOptions(item),
+                TableName: item.TableName || defaultTable,
+                ExpressionAttributeNames: item.ExpressionAttributeNames,
+                ProjectionExpression: item.ProjectionExpression,
+              },
             })),
-            ...args,
+            ...otherArgs,
           })
         )
         .then((res) => results.push(res))
         .catch(reject);
     }
 
-    resolve(results);
+    resolve(
+      results.flatMap(
+        (result) =>
+          result.Responses?.map((item) =>
+            item?.Item ? unmarshallWithOptions(item.Item) : undefined
+          ) || []
+      )
+    );
   });
 }

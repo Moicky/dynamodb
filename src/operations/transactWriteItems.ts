@@ -1,8 +1,12 @@
 import {
+  ConditionCheck,
+  Delete,
+  Put,
   TransactWriteItem,
   TransactWriteItemsCommand,
   TransactWriteItemsCommandInput,
   TransactWriteItemsCommandOutput,
+  Update,
 } from "@aws-sdk/client-dynamodb";
 
 import {
@@ -17,25 +21,22 @@ import {
 } from "../lib";
 
 type TransactItem = {
-  ConditionCheck?: Omit<
-    TransactWriteItem["ConditionCheck"],
-    "Key" | "TableName"
-  > & {
+  ConditionCheck?: Omit<ConditionCheck, "Key" | "TableName"> & {
     key: Record<string, any>;
     conditionData: Record<string, any>;
     TableName?: string;
   };
-  Put?: Omit<TransactWriteItem["Put"], "Item" | "TableName"> & {
+  Put?: Omit<Put, "Item" | "TableName"> & {
     item: Record<string, any>;
     TableName?: string;
     conditionData?: Record<string, any>;
   };
-  Delete?: Omit<TransactWriteItem["Delete"], "Key" | "TableName"> & {
+  Delete?: Omit<Delete, "Key" | "TableName"> & {
     key: Record<string, any>;
     conditionData?: Record<string, any>;
     TableName?: string;
   };
-  Update?: Omit<TransactWriteItem["Update"], "Key" | "TableName"> & {
+  Update?: Omit<Update, "Key" | "TableName"> & {
     key: Record<string, any>;
     updateData: Record<string, any>;
     conditionData?: Record<string, any>;
@@ -70,7 +71,9 @@ export async function transactWriteItems(
       } else if (item.Update) {
         return handleUpdateItem(item.Update, { now, table });
       } else {
-        throw new Error("Invalid TransactItem");
+        throw new Error(
+          "[@moicky/dynamodb]: Invalid TransactItem: " + JSON.stringify(item)
+        );
       }
     });
 
@@ -94,22 +97,20 @@ type BaseArgs = {
   table: string;
 };
 
-function handleBaseArgs(
+function handleExpressionAttributes(
   rest: {
     TableName?: string;
     ConditionExpression?: string;
   },
-  args: BaseArgs,
-  conditionData?: Record<string, any>
+  data?: Record<string, any>
 ) {
   return {
-    TableName: rest.TableName || args.table,
     ExpressionAttributeValues: getAttributeValues(
-      conditionData || {},
+      data || {},
       getAttributesFromExpression(rest.ConditionExpression || "", ":")
     ),
     ExpressionAttributeNames: getAttributeNames(
-      conditionData || {},
+      data || {},
       getAttributesFromExpression(rest.ConditionExpression || "")
     ),
   };
@@ -123,9 +124,10 @@ function handleConditionCheck(
 
   return {
     ConditionCheck: {
-      ...rest,
-      ...handleBaseArgs(rest, args, conditionData),
       Key: marshallWithOptions(key),
+      ...handleExpressionAttributes(rest, conditionData),
+      ...rest,
+      TableName: rest.TableName || args.table,
     },
   };
 }
@@ -140,9 +142,10 @@ function handlePutItem(
 
   return {
     Put: {
-      ...rest,
-      ...handleBaseArgs(rest, args, conditionData),
       Item: marshallWithOptions(params.item),
+      ...handleExpressionAttributes(rest, conditionData),
+      ...rest,
+      TableName: rest.TableName || args.table,
     },
   };
 }
@@ -155,9 +158,10 @@ function handleDeleteItem(
 
   return {
     Delete: {
-      ...rest,
-      ...handleBaseArgs(rest, args, conditionData),
       Key: marshallWithOptions(key),
+      ...handleExpressionAttributes(rest, conditionData),
+      ...rest,
+      TableName: rest.TableName || args.table,
     },
   };
 }
@@ -166,18 +170,25 @@ function handleUpdateItem(
   params: TransactItem["Update"],
   args: BaseArgs
 ): { Update: TransactWriteItem["Update"] } {
-  params.updateData.updatedAt ??= args.now;
-
   const { key, updateData, conditionData, ...rest } = params;
   const mergedData = { ...updateData, ...conditionData };
 
+  updateData.updatedAt ??= args.now;
+
+  const UpdateExpression =
+    "SET " +
+    Object.keys(updateData)
+      .map((key) => `#${key} = :${key}`)
+      .join(", ");
+
   return {
     Update: {
-      ...rest,
-      TableName: rest.TableName || args.table,
       Key: marshallWithOptions(key),
+      UpdateExpression,
       ExpressionAttributeValues: getAttributeValues(mergedData),
       ExpressionAttributeNames: getAttributeNames(mergedData),
+      ...rest,
+      TableName: rest.TableName || args.table,
     },
   };
 }
