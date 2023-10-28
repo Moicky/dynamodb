@@ -37,7 +37,7 @@ type TransactItem = {
     conditionData?: Record<string, any>;
     TableName?: string;
   };
-  Update?: Omit<Update, "Key" | "TableName"> & {
+  Update?: Partial<Omit<Update, "Key" | "TableName">> & {
     key: Record<string, any>;
     updateData: Record<string, any>;
     conditionData?: Record<string, any>;
