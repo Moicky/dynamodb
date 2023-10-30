@@ -15,8 +15,8 @@ Contains convenience functions for all major dynamodb operations. Requires very 
 - 👻 Will **use placeholders** to avoid colliding with [reserved words](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ReservedWords.html) if applicable
 - 🌎 Supports globally defined default arguments for each operation ([example](#configuring-global-defaults))
 - 🔨 Supports fixes for several issues with dynamodb ([example](#applying-fixes))
-- 📖 Offers a convenient way to use pagination with queries
-- 🔨 Supports transactGetItems & transactWriteItems
+- 📖 Offers a convenient way to use pagination with queries ([example](#paginated-items))
+- 🗂️ Supports **transactGetItems** & **transactWriteItems**
 
 ## Installation
 
@@ -26,14 +26,14 @@ npm i @moicky/dynamodb
 
 ## Setup
 
-Requires a **keySchema** definition to be setup. Automatically grabs `DYNAMODB_TABLE` as an **environment variable** and uses `PK` and `SK` for it's schema. Can be overwritten using `initSchema` with multiple tables:
+Automatically grabs `DYNAMODB_TABLE` as an **environment variable** and assumes `PK` and `SK` as it's schema. Can be customized using `initSchema` with one or more tables:
 
 ```ts
 import { initSchema } from "@moicky/dynamodb";
 
 // Should be called once at the start of the runtime before any operation is executed
 initSchema({
-  // first one will be used by default if no TableName is specified
+  // first one will be used by default if no TableName is specified when calling functions
   [process.env.DEFAULT_TABLE]: {
     hash: "PK",
     range: "SK",
@@ -73,6 +73,8 @@ await deleteItem(item, { TableName: process.env.SECOND_TABLE });
 ## Usage Examples
 
 ### Put Items
+
+Every put operation also adds the `createdAt` attribute with the current timestamp on each item.
 
 ```ts
 import { putItem, putItems } from "@moicky/dynamodb";
@@ -157,6 +159,8 @@ await deleteItems([
 
 ### Update Items
 
+Every update operation also upserts the `updatedAt` attribute with the current timestamp on each item.
+
 ```ts
 import { updateItem, removeAttributes } from "@moicky/dynamodb";
 
@@ -221,7 +225,11 @@ const booksWithFilter = await queryAllItems(
   // additional args with filterExpression for example
   { FilterExpression: "#released BETWEEN :from AND :to" }
 );
+```
 
+#### Paginated Items
+
+```ts
 // Pagination
 const { items, hasNextPage, hasPreviousPage, currentPage } =
   await queryPaginatedItems(
@@ -235,7 +243,7 @@ const { items, hasNextPage, hasPreviousPage, currentPage } =
 const { items: nextItems, currentPage: nextPage } = await queryPaginatedItems(
   "#PK = :PK and begins_with(#SK, :SK)",
   { PK: "User/1", SK: "Book/" },
-  { pageSize: 100, currentPage }
+  { pageSize: 100, currentPage } // args.direction: 'next' or 'previous'
 );
 // items: The items on the second page.
 // currentPage: { number: 2, firstKey: { ... }, lastKey: { ... } }
@@ -248,10 +256,10 @@ import { itemExists, getAscendingId } from "@moicky/dynamodb";
 
 // Check if an item exists using keySchema
 const exists = await itemExists({ PK: "User/1", SK: "Book/1" });
-console.log(exists); // true / false
+console.log(exists); // true or false
 
 // Generate ascending ID
-// Specify keySchemaHash and optionally item to start at using keySchemaRange
+// Specify Partition-Key and optionally the Sort-Key.
 
 // Example Structure 1: PK: "User/1", SK: "{{ ASCENDING_ID }}"
 // Last item: { PK: "User/1", SK: "00000009" }
@@ -260,18 +268,18 @@ console.log(id1); // "00000010"
 
 // Example Structure 2: PK: "User/1", SK: "Book/{{ ASCENDING_ID }}"
 // Last item: { PK: "User/1", SK: "Book/00000009" }
-const id2 = await getAscendingId({ PK: "User/1", SK: "Book" });
+const id2 = await getAscendingId({ PK: "User/1", SK: "Book/" });
 console.log(id2); // "00000010"
 
 // Specify length of ID
-const id3 = await getAscendingId({ PK: "User/1", SK: "Book", length: 4 });
+const id3 = await getAscendingId({ PK: "User/1", SK: "Book/", length: 4 });
 console.log(id3); // "0010"
 
-// Example Structure 3: someKeySchemaHash: "User/1", SK: "Book/{{ ASCENDING_ID }}"
-// Last item: { someKeySchemaHash: "User/1", SK: "Book/00000009" }
+// Example Structure 3: somePartitionKey: "User/1", SK: "Book/{{ ASCENDING_ID }}"
+// Last item: { somePartitionKey: "User/1", SK: "Book/00000009" }
 const id4 = await getAscendingId({
-  someKeySchemaHash: "User/1",
-  SK: "Book",
+  somePartitionKey: "User/1",
+  SK: "Book/",
 });
 console.log(id4); // "00000010"
 ```
@@ -283,9 +291,9 @@ Global defaults can be configured using the `initDefaults` function. This allows
 Should be called before any DynamoDB operations are performed.
 
 ```ts
-import { initDefaultArguments } from "@moicky/dynamodb";
+import { initDefaultArguments, getItem } from "@moicky/dynamodb";
 
-// Enables consistent reads for all DynamoDB operations which support it.
+// This example enables consistent reads for all DynamoDB operations which support it.
 initDefaultArguments({
   getItem: { ConsistentRead: true },
   getAllItems: { ConsistentRead: true },
@@ -296,6 +304,12 @@ initDefaultArguments({
   queryItems: { ConsistentRead: true },
   queryAllItems: { ConsistentRead: true },
 });
+
+// It is still possible to override any arguments when calling a function
+const itemWithoutConsistentRead = await getItem(
+  { PK: "User/1", SK: "Book/001" },
+  { ConsistentRead: false }
+);
 ```
 
 ## Applying fixes
@@ -325,6 +339,7 @@ initFixes({
     enabled: true, // default,
 
     // Won't disable ConsistantRead if IndexName is specified here.
+    // This works because DynamoDB supports ConsistantRead on LocalSecondaryIndexes
     stillUseOnLocalIndexes: ["localIndexName1", "localIndexName2"],
   },
 });
