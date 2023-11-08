@@ -140,7 +140,7 @@ await getAllItems();
 ```ts
 import { deleteItem, deleteItems } from "@moicky/dynamodb";
 
-// Delete single item
+// Delete a single item
 await deleteItem({
   PK: "User/1",
   SK: "Book/1",
