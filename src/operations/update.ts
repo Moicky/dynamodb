@@ -47,11 +47,13 @@ import {
  * console.log(newItem); // { "PK": "User/1", "SK": "Book/1", "released": 2000 }
  * ```
  */
-export async function updateItem(
+export async function updateItem<
+  T extends Record<string, any> = Record<string, any>
+>(
   key: Record<string, any>,
   data: Record<string, any>,
   args: Partial<UpdateItemCommandInput> = {}
-): Promise<undefined | Record<string, any>> {
+): Promise<undefined | T> {
   args = withDefaults(args, "updateItem");
 
   if (!Object.keys(data).includes("updatedAt")) {
@@ -91,7 +93,7 @@ export async function updateItem(
       })
     )
     .then((res) =>
-      args?.ReturnValues ? unmarshallWithOptions(res.Attributes) : undefined
+      args?.ReturnValues ? unmarshallWithOptions<T>(res.Attributes) : undefined
     );
 }
 
@@ -109,28 +111,34 @@ export async function updateItem(
  * await removeAttributes({ PK: "User/1", SK: "Book/1" }, ["description"]);
  * ```
  */
-export async function removeAttributes(
+export async function removeAttributes<
+  T extends Record<string, any> = Record<string, any>
+>(
   key: Record<string, any>,
   attributes: string[],
   args: Partial<UpdateItemCommandInput> = {}
-): Promise<UpdateItemCommandOutput> {
+): Promise<UpdateItemCommandOutput | T> {
   args = withDefaults(args, "removeAttributes");
 
   const UpdateExpression =
     "REMOVE " + attributes.map((att) => `#${att}`).join(", ");
 
-  return getClient().send(
-    new UpdateItemCommand({
-      Key: stripKey(key, args),
-      UpdateExpression,
-      ExpressionAttributeNames: getAttributeNames(
-        attributes.reduce((acc, att) => {
-          acc[att] = att;
-          return acc;
-        }, {})
-      ),
-      ...args,
-      TableName: args?.TableName || getDefaultTable(),
-    })
-  );
+  return getClient()
+    .send(
+      new UpdateItemCommand({
+        Key: stripKey(key, args),
+        UpdateExpression,
+        ExpressionAttributeNames: getAttributeNames(
+          attributes.reduce((acc, att) => {
+            acc[att] = att;
+            return acc;
+          }, {})
+        ),
+        ...args,
+        TableName: args?.TableName || getDefaultTable(),
+      })
+    )
+    .then((res) =>
+      args?.ReturnValues ? unmarshallWithOptions<T>(res.Attributes) : undefined
+    );
 }

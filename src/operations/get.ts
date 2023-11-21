@@ -43,10 +43,12 @@ import {
  * );
  * ```
  */
-export async function getItem(
+export async function getItem<
+  T extends Record<string, any> = Record<string, any>
+>(
   key: Record<string, any>,
   args: Partial<GetItemCommandInput> = {}
-): Promise<Record<string, any> | undefined> {
+): Promise<T | undefined> {
   args = withDefaults(args, "getItem");
 
   return getClient()
@@ -95,11 +97,13 @@ type GetItemsArgs = Partial<
  * );
  * ```
  */
-export async function getItems(
+export async function getItems<
+  T extends Record<string, any> = Record<string, any>
+>(
   keys: Record<string, any>[],
   args: GetItemsArgs = {},
   retry = 0
-) {
+): Promise<Array<T | undefined>> {
   args = withDefaults(args, "getItems");
 
   // creates batches of 100 items each and performs batchGet on every batch.
@@ -120,7 +124,7 @@ export async function getItems(
   ) as Record<string, any>[];
 
   const batches = splitEvery(uniqueKeys, batchReadLimit);
-  const results: Record<string, any>[] = [];
+  const results: T[] = [];
 
   if (retry > 2) {
     return results;
@@ -143,16 +147,16 @@ export async function getItems(
         )
         .then((res) => {
           const unprocessed = res?.UnprocessedKeys?.[TableName];
-          const allItemsFromBatch = res?.Responses?.[TableName] || [];
+          const allItemsFromBatch = (res?.Responses?.[TableName] as T[]) || [];
           if (unprocessed) {
-            return getItems(
+            return getItems<T>(
               unprocessed.Keys,
               { ...args, TableName },
               retry + 1
             ).then((items) => allItemsFromBatch.concat(items));
           }
           return allItemsFromBatch.map(
-            (item) => item && unmarshallWithOptions(item)
+            (item) => item && unmarshallWithOptions<T>(item)
           );
         })
         .then((items) => results.push(...items));
@@ -169,7 +173,7 @@ export async function getItems(
   return keys.map(
     (key) =>
       resultItems[JSON.stringify(stripKey(key, { TableName }))] || undefined
-  ) as (Record<string, any> | undefined)[];
+  ) as Array<T | undefined>;
 }
 
 /**
@@ -190,7 +194,9 @@ export async function getItems(
  * );
  * ```
  */
-export async function getAllItems(args: Partial<ScanCommandInput> = {}) {
+export async function getAllItems<
+  T extends Record<string, any> = Record<string, any>
+>(args: Partial<ScanCommandInput> = {}) {
   args = withFixes(withDefaults(args, "getAllItems"));
 
   return getClient()
@@ -201,6 +207,6 @@ export async function getAllItems(args: Partial<ScanCommandInput> = {}) {
       })
     )
     .then((res) =>
-      res.Items.map((item) => item && unmarshallWithOptions(item))
+      res.Items.map((item) => item && unmarshallWithOptions<T>(item))
     );
 }

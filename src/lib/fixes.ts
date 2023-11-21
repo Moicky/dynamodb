@@ -106,6 +106,8 @@ export const marshallWithOptions = (input: Parameters<typeof marshall>[0]) =>
  * @returns The unmarshalled input
  * @private
  */
-export const unmarshallWithOptions = (
+export const unmarshallWithOptions = <
+  T extends Record<string, any> = Record<string, any>
+>(
   input: Parameters<typeof unmarshall>[0]
-) => unmarshall(input, fixes.unmarshallOptions);
+): T => unmarshall(input, fixes.unmarshallOptions) as T;

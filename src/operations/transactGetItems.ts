@@ -49,7 +49,9 @@ import {
  * );
  * ```
  */
-export function transactGetItems(
+export function transactGetItems<
+  T extends Record<string, any> = Array<Record<string, any> | undefined>
+>(
   keys: Array<
     Omit<Get, "TableName" | "Key"> & {
       key: Record<string, any>;
@@ -61,7 +63,7 @@ export function transactGetItems(
       TableName?: string;
     }
   >
-): Promise<Array<Record<string, any> | undefined>> {
+): Promise<T[]> {
   return new Promise(async (resolve, reject) => {
     args = withDefaults(args, "transactGetItems");
     const { TableName, ...otherArgs } = args;
@@ -99,7 +101,7 @@ export function transactGetItems(
           result.Responses?.map((item) =>
             item?.Item ? unmarshallWithOptions(item.Item) : undefined
           ) || []
-      )
+      ) as T[]
     );
   });
 }
