@@ -88,19 +88,17 @@ export async function query(
  * });
  * ```
  */
-export async function queryItems<
-  T extends Record<string, any> = Record<string, any>
->(
+export async function queryItems(
   keyCondition: string,
   key: Record<string, any>,
   args: Partial<QueryCommandInput> = {}
-): Promise<Array<T>> {
+): Promise<Record<string, any>[]> {
   args = withDefaults(args, "queryItems");
 
   return _query(keyCondition, key, args).then((res) =>
     (res?.Items || [])
-      .map((item) => unmarshallWithOptions<T>(item))
-      .filter(Boolean)
+      .map((item) => item && unmarshallWithOptions(item))
+      .filter((item) => item)
   );
 }
 
@@ -133,11 +131,11 @@ export async function queryItems<
  * );
  * ```
  */
-export async function queryAllItems<T = Record<string, any>>(
+export async function queryAllItems(
   keyCondition: string,
   key: Record<string, any>,
   args: Partial<QueryCommandInput> = {}
-): Promise<Array<T>> {
+): Promise<Record<string, any>[]> {
   args = withDefaults(args, "queryAllItems");
 
   let data = await _query(keyCondition, key, args);
@@ -158,7 +156,7 @@ export async function queryAllItems<T = Record<string, any>>(
     }
   }
   return (data?.Items || [])
-    .map((item) => item && unmarshallWithOptions<T>(item))
+    .map((item) => item && unmarshallWithOptions(item))
     .filter(Boolean);
 }
 
@@ -181,8 +179,8 @@ export type PaginationPage = {
  * @property hasNextPage - Whether there is a next page.
  * @property currentPage - The current page.
  */
-export type PaginationResult<T> = {
-  items: T[];
+export type PaginationResult = {
+  items: Record<string, any>[];
   hasPreviousPage: boolean;
   hasNextPage: boolean;
   currentPage: PaginationPage;
@@ -228,13 +226,11 @@ export interface PaginationArgs
  * // currentPage: { number: 2, firstKey: { ... }, lastKey: { ... } }
  * ```
  */
-export async function queryPaginatedItems<
-  T extends Record<string, any> = Record<string, any>
->(
+export async function queryPaginatedItems(
   keyCondition: string,
   key: Record<string, any>,
   args: PaginationArgs
-): Promise<PaginationResult<T>> {
+): Promise<PaginationResult> {
   args = withDefaults(args, "queryPaginatedItems");
 
   const pageSize = args.pageSize;
@@ -320,7 +316,7 @@ export async function queryPaginatedItems<
 
   const items = data.Items.map(
     (item) => item && unmarshallWithOptions(item)
-  ).filter(Boolean) as T[];
+  ).filter(Boolean);
 
   return {
     items,

@@ -34,12 +34,10 @@ import {
  * });
  * ```
  */
-export async function putItem<
-  T extends Record<string, any> = Record<string, any>
->(
+export async function putItem(
   item: Record<string, any>,
   args: Partial<PutItemCommandInput> = {}
-): Promise<PutItemCommandOutput | T> {
+): Promise<PutItemCommandOutput | Record<string, any>> {
   args = withDefaults(args, "putItem");
 
   if (!Object.keys(item).includes("createdAt")) {
