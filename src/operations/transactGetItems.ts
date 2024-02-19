@@ -13,6 +13,7 @@ import {
   unmarshallWithOptions,
   withDefaults,
 } from "../lib";
+import { DynamoDBItem } from "../types";
 
 /**
  * Performs a TransactGetItems operation against DynamoDB. This allows you to retrieve many items at once.
@@ -49,19 +50,10 @@ import {
  * );
  * ```
  */
-export function transactGetItems(
-  keys: Array<
-    Omit<Get, "TableName" | "Key"> & {
-      key: Record<string, any>;
-      TableName?: string;
-    }
-  >,
-  args?: Partial<
-    TransactGetItemsCommandInput & {
-      TableName?: string;
-    }
-  >
-): Promise<Array<Record<string, any> | undefined>> {
+export function transactGetItems<T extends DynamoDBItem = DynamoDBItem>(
+  keys: Array<Omit<Get, "TableName" | "Key"> & { key: T; TableName?: string }>,
+  args?: Partial<TransactGetItemsCommandInput & { TableName?: string }>
+): Promise<Array<T | undefined>> {
   return new Promise(async (resolve, reject) => {
     args = withDefaults(args, "transactGetItems");
     const { TableName, ...otherArgs } = args;
@@ -97,7 +89,7 @@ export function transactGetItems(
       results.flatMap(
         (result) =>
           result.Responses?.map((item) =>
-            item?.Item ? unmarshallWithOptions(item.Item) : undefined
+            item?.Item ? unmarshallWithOptions<T>(item.Item) : undefined
           ) || []
       )
     );

@@ -14,6 +14,7 @@ import {
   unmarshallWithOptions,
   withDefaults,
 } from "../lib";
+import { DynamoDBItem } from "../types";
 
 /**
  * Updates an item in DynamoDB. All provided fields are overwritten.
@@ -47,23 +48,35 @@ import {
  * console.log(newItem); // { "PK": "User/1", "SK": "Book/1", "released": 2000 }
  * ```
  */
-export async function updateItem(
-  key: Record<string, any>,
-  data: Record<string, any>,
-  args: Partial<UpdateItemCommandInput> = {}
-): Promise<undefined | Record<string, any>> {
-  args = withDefaults(args, "updateItem");
+export async function updateItem<T extends DynamoDBItem>(
+  key: T,
+  data: Partial<T>,
+  args: Partial<UpdateItemCommandInput>
+): Promise<T>;
+export async function updateItem<
+  T extends DynamoDBItem,
+  K extends Partial<UpdateItemCommandInput> = Partial<UpdateItemCommandInput>
+>(
+  key: T,
+  data: Partial<T>,
+  args?: K
+): Promise<K extends { ReturnValues: string } ? T : undefined>;
+export async function updateItem<
+  T extends DynamoDBItem,
+  K extends Partial<UpdateItemCommandInput> = Partial<UpdateItemCommandInput>
+>(key: T, data: Partial<T>, args?: K): Promise<T | undefined> {
+  const argsWithDefaults = withDefaults(args || {}, "updateItem");
 
   if (!Object.keys(data).includes("updatedAt")) {
     data.updatedAt = Date.now();
   }
 
   const valuesInCondition = getAttributesFromExpression(
-    args?.ConditionExpression || "",
+    argsWithDefaults?.ConditionExpression || "",
     ":"
   );
   const namesInCondition = getAttributesFromExpression(
-    args?.ConditionExpression || ""
+    argsWithDefaults?.ConditionExpression || ""
   );
 
   const attributesToUpdate = Object.keys(data).filter(
@@ -76,7 +89,7 @@ export async function updateItem(
   return getClient()
     .send(
       new UpdateItemCommand({
-        Key: stripKey(key, args),
+        Key: stripKey(key, argsWithDefaults),
         UpdateExpression,
         ExpressionAttributeValues: getAttributeValues(data, [
           ...attributesToUpdate,
@@ -86,12 +99,18 @@ export async function updateItem(
           ...attributesToUpdate,
           ...namesInCondition,
         ]),
-        ...args,
-        TableName: args?.TableName || getDefaultTable(),
+        ...argsWithDefaults,
+        TableName: argsWithDefaults?.TableName || getDefaultTable(),
       })
     )
     .then((res) =>
-      args?.ReturnValues ? unmarshallWithOptions(res.Attributes) : undefined
+      argsWithDefaults?.ReturnValues
+        ? (unmarshallWithOptions<T>(res.Attributes) as K extends {
+            ReturnValues: string;
+          }
+            ? T
+            : undefined)
+        : undefined
     );
 }
 
@@ -109,15 +128,15 @@ export async function updateItem(
  * await removeAttributes({ PK: "User/1", SK: "Book/1" }, ["description"]);
  * ```
  */
-export async function removeAttributes(
-  key: Record<string, any>,
-  attributes: string[],
+export async function removeAttributes<T extends DynamoDBItem = DynamoDBItem>(
+  key: T,
+  attributes: Array<keyof T>,
   args: Partial<UpdateItemCommandInput> = {}
 ): Promise<UpdateItemCommandOutput> {
   args = withDefaults(args, "removeAttributes");
 
   const UpdateExpression =
-    "REMOVE " + attributes.map((att) => `#${att}`).join(", ");
+    "REMOVE " + attributes.map((att) => `#${String(att)}`).join(", ");
 
   return getClient().send(
     new UpdateItemCommand({
@@ -127,7 +146,7 @@ export async function removeAttributes(
         attributes.reduce((acc, att) => {
           acc[att] = att;
           return acc;
-        }, {})
+        }, {} as { [key in keyof T]: any })
       ),
       ...args,
       TableName: args?.TableName || getDefaultTable(),

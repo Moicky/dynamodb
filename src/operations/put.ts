@@ -15,6 +15,7 @@ import {
   unmarshallWithOptions,
   withDefaults,
 } from "../lib";
+import { DynamoDBItem } from "../types";
 
 /**
  * Inserts an item into the DynamoDB table.
@@ -34,11 +35,19 @@ import {
  * });
  * ```
  */
-export async function putItem(
-  item: Record<string, any>,
-  args: Partial<PutItemCommandInput> = {}
-): Promise<PutItemCommandOutput | Record<string, any>> {
-  args = withDefaults(args, "putItem");
+export async function putItem<T extends DynamoDBItem>(
+  item: T,
+  args: Partial<PutItemCommandInput> & { ReturnValues: string }
+): Promise<T>;
+export async function putItem<
+  T extends DynamoDBItem,
+  K extends Partial<PutItemCommandInput> = Partial<PutItemCommandInput>
+>(item: T, args?: K): Promise<PutItemCommandOutput>;
+export async function putItem<
+  T extends DynamoDBItem,
+  K extends Partial<PutItemCommandInput> = Partial<PutItemCommandInput>
+>(item: T, args?: K): Promise<T | PutItemCommandOutput> {
+  const argsWithDefaults = withDefaults(args || {}, "putItem");
 
   if (!Object.keys(item).includes("createdAt")) {
     item.createdAt = Date.now();
@@ -47,12 +56,14 @@ export async function putItem(
     .send(
       new PutItemCommand({
         Item: marshallWithOptions(item),
-        ...args,
-        TableName: args?.TableName || getDefaultTable(),
+        ...argsWithDefaults,
+        TableName: argsWithDefaults?.TableName || getDefaultTable(),
       })
     )
     .then((res) =>
-      args?.ReturnValues ? unmarshallWithOptions(res?.Attributes) : res
+      argsWithDefaults?.ReturnValues
+        ? (unmarshallWithOptions<T>(res?.Attributes) as any)
+        : res
     );
 }
 
@@ -84,7 +95,7 @@ type PutItemsArgs = Partial<
  * ```
  */
 export async function putItems(
-  items: Record<string, any>[],
+  items: DynamoDBItem[],
   args: PutItemsArgs = {},
   retry = 0
 ): Promise<BatchWriteItemCommandOutput[]> {

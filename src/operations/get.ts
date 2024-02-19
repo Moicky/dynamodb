@@ -16,6 +16,7 @@ import {
   withDefaults,
   withFixes,
 } from "../lib";
+import { DynamoDBItem } from "../types";
 
 /**
  * Retrieves an item from the DynamoDB table using its key schema.
@@ -43,10 +44,10 @@ import {
  * );
  * ```
  */
-export async function getItem(
-  key: Record<string, any>,
+export async function getItem<T extends DynamoDBItem = DynamoDBItem>(
+  key: T,
   args: Partial<GetItemCommandInput> = {}
-): Promise<Record<string, any> | undefined> {
+): Promise<T | undefined> {
   args = withDefaults(args, "getItem");
 
   return getClient()
@@ -57,7 +58,7 @@ export async function getItem(
         TableName: args?.TableName || getDefaultTable(),
       })
     )
-    .then((res) => res?.Item && unmarshallWithOptions(res.Item));
+    .then((res) => res?.Item && unmarshallWithOptions<T>(res.Item));
 }
 
 type GetItemsArgs = Partial<
@@ -95,11 +96,11 @@ type GetItemsArgs = Partial<
  * );
  * ```
  */
-export async function getItems(
-  keys: Record<string, any>[],
+export async function getItems<T extends DynamoDBItem = DynamoDBItem>(
+  keys: T[],
   args: GetItemsArgs = {},
   retry = 0
-) {
+): Promise<Array<T | undefined>> {
   args = withDefaults(args, "getItems");
 
   // creates batches of 100 items each and performs batchGet on every batch.
@@ -120,7 +121,7 @@ export async function getItems(
   ) as Record<string, any>[];
 
   const batches = splitEvery(uniqueKeys, batchReadLimit);
-  const results: Record<string, any>[] = [];
+  const results: T[] = [];
 
   if (retry > 2) {
     return results;
@@ -143,23 +144,23 @@ export async function getItems(
         )
         .then((res) => {
           const unprocessed = res?.UnprocessedKeys?.[TableName];
-          const allItemsFromBatch = res?.Responses?.[TableName] || [];
+          const allItemsFromBatch = (res?.Responses?.[TableName] as T[]) || [];
           if (unprocessed) {
-            return getItems(
-              unprocessed.Keys,
+            return getItems<T>(
+              unprocessed.Keys as T[],
               { ...args, TableName },
               retry + 1
             ).then((items) => allItemsFromBatch.concat(items));
           }
           return allItemsFromBatch.map(
-            (item) => item && unmarshallWithOptions(item)
+            (item) => item && unmarshallWithOptions<T>(item)
           );
         })
         .then((items) => results.push(...items));
     })
   );
   const resultItems = results
-    .filter((i: any) => i)
+    .filter(Boolean)
     .reduce((acc: Record<string, any>, item: any) => {
       const keyString = JSON.stringify(stripKey(item, { TableName }));
       acc[keyString] = item;
@@ -169,7 +170,7 @@ export async function getItems(
   return keys.map(
     (key) =>
       resultItems[JSON.stringify(stripKey(key, { TableName }))] || undefined
-  ) as (Record<string, any> | undefined)[];
+  );
 }
 
 /**
@@ -190,7 +191,9 @@ export async function getItems(
  * );
  * ```
  */
-export async function getAllItems(args: Partial<ScanCommandInput> = {}) {
+export async function getAllItems<T extends DynamoDBItem = DynamoDBItem>(
+  args: Partial<ScanCommandInput> = {}
+): Promise<T[]> {
   args = withFixes(withDefaults(args, "getAllItems"));
 
   return getClient()
@@ -200,7 +203,5 @@ export async function getAllItems(args: Partial<ScanCommandInput> = {}) {
         TableName: args?.TableName || getDefaultTable(),
       })
     )
-    .then((res) =>
-      res.Items.map((item) => item && unmarshallWithOptions(item))
-    );
+    .then((res) => res.Items.map((item) => unmarshallWithOptions<T>(item)));
 }

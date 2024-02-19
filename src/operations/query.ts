@@ -15,6 +15,7 @@ import {
   withDefaults,
   withFixes,
 } from "../lib";
+import { DynamoDBItem } from "../types";
 
 /**
  * The internal _query function that executes the QueryCommand with given conditions and arguments.
@@ -88,17 +89,17 @@ export async function query(
  * });
  * ```
  */
-export async function queryItems(
+export async function queryItems<T extends DynamoDBItem = DynamoDBItem>(
   keyCondition: string,
   key: Record<string, any>,
   args: Partial<QueryCommandInput> = {}
-): Promise<Record<string, any>[]> {
+): Promise<T[]> {
   args = withDefaults(args, "queryItems");
 
   return _query(keyCondition, key, args).then((res) =>
     (res?.Items || [])
-      .map((item) => item && unmarshallWithOptions(item))
-      .filter((item) => item)
+      .map((item) => item && unmarshallWithOptions<T>(item))
+      .filter(Boolean)
   );
 }
 
@@ -131,11 +132,11 @@ export async function queryItems(
  * );
  * ```
  */
-export async function queryAllItems(
+export async function queryAllItems<T extends DynamoDBItem = DynamoDBItem>(
   keyCondition: string,
   key: Record<string, any>,
   args: Partial<QueryCommandInput> = {}
-): Promise<Record<string, any>[]> {
+): Promise<T[]> {
   args = withDefaults(args, "queryAllItems");
 
   let data = await _query(keyCondition, key, args);
@@ -156,7 +157,7 @@ export async function queryAllItems(
     }
   }
   return (data?.Items || [])
-    .map((item) => item && unmarshallWithOptions(item))
+    .map((item) => item && unmarshallWithOptions<T>(item))
     .filter(Boolean);
 }
 
@@ -179,8 +180,8 @@ export type PaginationPage = {
  * @property hasNextPage - Whether there is a next page.
  * @property currentPage - The current page.
  */
-export type PaginationResult = {
-  items: Record<string, any>[];
+export type PaginationResult<T extends DynamoDBItem = DynamoDBItem> = {
+  items: T[];
   hasPreviousPage: boolean;
   hasNextPage: boolean;
   currentPage: PaginationPage;
@@ -226,11 +227,13 @@ export interface PaginationArgs
  * // currentPage: { number: 2, firstKey: { ... }, lastKey: { ... } }
  * ```
  */
-export async function queryPaginatedItems(
+export async function queryPaginatedItems<
+  T extends DynamoDBItem = DynamoDBItem
+>(
   keyCondition: string,
   key: Record<string, any>,
   args: PaginationArgs
-): Promise<PaginationResult> {
+): Promise<PaginationResult<T>> {
   args = withDefaults(args, "queryPaginatedItems");
 
   const pageSize = args.pageSize;
@@ -301,7 +304,7 @@ export async function queryPaginatedItems(
   data.Items = data.Items || [];
   direction === "previous" && data.Items.reverse();
 
-  const applySchema = (item: Record<string, any>) => {
+  const applySchema = (item: DynamoDBItem) => {
     return keyAttributes.reduce(
       (acc, key) => ({ ...acc, [key]: item[key] }),
       {}
@@ -315,7 +318,7 @@ export async function queryPaginatedItems(
   const lastKey = lastItem && unmarshallWithOptions(applySchema(lastItem));
 
   const items = data.Items.map(
-    (item) => item && unmarshallWithOptions(item)
+    (item) => item && unmarshallWithOptions<T>(item)
   ).filter(Boolean);
 
   return {

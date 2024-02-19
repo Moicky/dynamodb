@@ -5,6 +5,7 @@ import {
   unmarshall,
   unmarshallOptions,
 } from "@aws-sdk/util-dynamodb";
+import { DynamoDBItem } from "../types";
 
 /**
  * DynamoDBFixes is a collection of fixes for DynamoDB.
@@ -106,6 +107,6 @@ export const marshallWithOptions = (input: Parameters<typeof marshall>[0]) =>
  * @returns The unmarshalled input
  * @private
  */
-export const unmarshallWithOptions = (
+export const unmarshallWithOptions = <T extends DynamoDBItem = DynamoDBItem>(
   input: Parameters<typeof unmarshall>[0]
-) => unmarshall(input, fixes.unmarshallOptions);
+) => unmarshall(input, fixes.unmarshallOptions) as T;

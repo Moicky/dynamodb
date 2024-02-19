@@ -7,6 +7,7 @@ import {
   stripKey,
   withDefaults,
 } from "../lib";
+import { DynamoDBItem } from "../types";
 import { queryItems } from "./query";
 
 /**
@@ -23,7 +24,7 @@ import { queryItems } from "./query";
  * ```
  */
 export async function itemExists(
-  key: Record<string, any>,
+  key: DynamoDBItem,
   args: Partial<GetItemCommandInput> = {}
 ) {
   args = withDefaults(args, "itemExists");

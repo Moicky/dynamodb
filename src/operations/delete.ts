@@ -13,6 +13,7 @@ import {
   stripKey,
   withDefaults,
 } from "../lib";
+import { DynamoDBItem } from "../types";
 
 /**
  * Deletes an item from the DynamoDB table using its key schema.
@@ -42,7 +43,7 @@ import {
  * ```
  */
 export async function deleteItem(
-  key: Record<string, any>,
+  key: DynamoDBItem,
   args: Partial<DeleteItemCommandInput> = {}
 ): Promise<DeleteItemCommandOutput> {
   return getClient().send(
@@ -93,7 +94,7 @@ type DeleteItemsArgs = Partial<
  * ```
  */
 export async function deleteItems(
-  keys: Record<string, any>[],
+  keys: DynamoDBItem[],
   args: DeleteItemsArgs = {},
   retry = 0
 ): Promise<void> {
