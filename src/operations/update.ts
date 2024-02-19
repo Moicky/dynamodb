@@ -49,7 +49,7 @@ import { DynamoDBItem } from "../types";
  * ```
  */
 export async function updateItem<T extends DynamoDBItem>(
-  key: T,
+  key: Partial<T>,
   data: Partial<T>,
   args: Partial<UpdateItemCommandInput>
 ): Promise<T>;
@@ -57,14 +57,14 @@ export async function updateItem<
   T extends DynamoDBItem,
   K extends Partial<UpdateItemCommandInput> = Partial<UpdateItemCommandInput>
 >(
-  key: T,
+  key: Partial<T>,
   data: Partial<T>,
   args?: K
 ): Promise<K extends { ReturnValues: string } ? T : undefined>;
 export async function updateItem<
   T extends DynamoDBItem,
   K extends Partial<UpdateItemCommandInput> = Partial<UpdateItemCommandInput>
->(key: T, data: Partial<T>, args?: K): Promise<T | undefined> {
+>(key: Partial<T>, data: Partial<T>, args?: K): Promise<T | undefined> {
   const argsWithDefaults = withDefaults(args || {}, "updateItem");
 
   if (!Object.keys(data).includes("updatedAt")) {
@@ -129,7 +129,7 @@ export async function updateItem<
  * ```
  */
 export async function removeAttributes<T extends DynamoDBItem = DynamoDBItem>(
-  key: T,
+  key: Partial<T>,
   attributes: Array<keyof T>,
   args: Partial<UpdateItemCommandInput> = {}
 ): Promise<UpdateItemCommandOutput> {
