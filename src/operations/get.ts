@@ -58,7 +58,9 @@ export async function getItem<T extends DynamoDBItem = DynamoDBItem>(
         TableName: args?.TableName || getDefaultTable(),
       })
     )
-    .then((res) => res?.Item && unmarshallWithOptions<T>(res.Item));
+    .then((res) =>
+      res?.Item ? unmarshallWithOptions<T>(res.Item) : undefined
+    );
 }
 
 type GetItemsArgs = Partial<
