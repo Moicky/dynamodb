@@ -45,7 +45,7 @@ import { DynamoDBItem } from "../types";
  * ```
  */
 export async function getItem<T extends DynamoDBItem = DynamoDBItem>(
-  key: T,
+  key: Partial<T>,
   args: Partial<GetItemCommandInput> = {}
 ): Promise<T | undefined> {
   args = withDefaults(args, "getItem");
@@ -97,7 +97,7 @@ type GetItemsArgs = Partial<
  * ```
  */
 export async function getItems<T extends DynamoDBItem = DynamoDBItem>(
-  keys: T[],
+  keys: Partial<T>[],
   args: GetItemsArgs = {},
   retry = 0
 ): Promise<Array<T | undefined>> {
