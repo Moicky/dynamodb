@@ -42,8 +42,8 @@ import { DynamoDBItem } from "../types";
  * );
  * ```
  */
-export async function deleteItem(
-  key: DynamoDBItem,
+export async function deleteItem<T extends DynamoDBItem = DynamoDBItem>(
+  key: Partial<T>,
   args: Partial<DeleteItemCommandInput> = {}
 ): Promise<DeleteItemCommandOutput> {
   return getClient().send(
@@ -93,8 +93,8 @@ type DeleteItemsArgs = Partial<
  * );
  * ```
  */
-export async function deleteItems(
-  keys: DynamoDBItem[],
+export async function deleteItems<T extends DynamoDBItem = DynamoDBItem>(
+  keys: Partial<T>[],
   args: DeleteItemsArgs = {},
   retry = 0
 ): Promise<void> {
