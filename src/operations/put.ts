@@ -3,8 +3,8 @@ import {
   BatchWriteItemCommandInput,
   BatchWriteItemCommandOutput,
   PutItemCommand,
-  PutItemCommandInput,
   PutItemCommandOutput,
+  PutItemCommandInput as _PutItemCommandInput,
 } from "@aws-sdk/client-dynamodb";
 
 import {
@@ -16,6 +16,11 @@ import {
   withDefaults,
 } from "../lib";
 import { DynamoDBItem } from "../types";
+
+// Fixes types since aws-sdk-js-v3 is wrong here
+type PutItemCommandInput = Omit<_PutItemCommandInput, "ReturnValues"> & {
+  ReturnValues?: "NONE" | "ALL_OLD" | "ALL_NEW";
+};
 
 /**
  * Inserts an item into the DynamoDB table.
@@ -50,19 +55,24 @@ export async function putItem<
   const argsWithDefaults = withDefaults(args || {}, "putItem");
 
   if (!Object.keys(item).includes("createdAt")) {
-    item.createdAt = Date.now();
+    item = { ...item, createdAt: Date.now() };
   }
+  const { ReturnValues, ...otherArgs } = argsWithDefaults;
+
   return getClient()
     .send(
       new PutItemCommand({
         Item: marshallWithOptions(item),
-        ...argsWithDefaults,
-        TableName: argsWithDefaults?.TableName || getDefaultTable(),
+        ...otherArgs,
+        ...(ReturnValues && ReturnValues !== "ALL_NEW" && { ReturnValues }),
+        TableName: otherArgs?.TableName || getDefaultTable(),
       })
     )
     .then((res) =>
-      argsWithDefaults?.ReturnValues
-        ? (unmarshallWithOptions<T>(res?.Attributes) as any)
+      ReturnValues
+        ? ReturnValues === "ALL_NEW"
+          ? item
+          : unmarshallWithOptions<T>(res?.Attributes)
         : res
     );
 }
