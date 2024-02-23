@@ -1,4 +1,5 @@
 import {
+  ReturnValue,
   UpdateItemCommand,
   UpdateItemCommandInput,
   UpdateItemCommandOutput,
@@ -48,23 +49,31 @@ import { DynamoDBItem } from "../types";
  * console.log(newItem); // { "PK": "User/1", "SK": "Book/1", "released": 2000 }
  * ```
  */
-export async function updateItem<T extends DynamoDBItem>(
-  key: Partial<T>,
-  data: Partial<T>,
-  args: Partial<UpdateItemCommandInput>
-): Promise<T>;
+type UpdateInputWithoutReturn = Partial<
+  Omit<UpdateItemCommandInput, "ReturnValue">
+>;
+type UpdateInputWithReturn = UpdateInputWithoutReturn & {
+  ReturnValues: ReturnValue;
+};
 export async function updateItem<
-  T extends DynamoDBItem,
-  K extends Partial<UpdateItemCommandInput> = Partial<UpdateItemCommandInput>
->(
-  key: Partial<T>,
-  data: Partial<T>,
-  args?: K
-): Promise<K extends { ReturnValues: string } ? T : undefined>;
+  T extends DynamoDBItem = DynamoDBItem,
+  D extends Partial<T> = Partial<T>
+>(key: Partial<T>, data: D, args?: never): Promise<undefined>;
 export async function updateItem<
-  T extends DynamoDBItem,
-  K extends Partial<UpdateItemCommandInput> = Partial<UpdateItemCommandInput>
->(key: Partial<T>, data: Partial<T>, args?: K): Promise<T | undefined> {
+  T extends DynamoDBItem = DynamoDBItem,
+  K extends UpdateInputWithReturn = UpdateInputWithReturn,
+  D extends Partial<T> = Partial<T>
+>(key: Partial<T>, data: D, args: K): Promise<T>;
+export async function updateItem<
+  T extends DynamoDBItem = DynamoDBItem,
+  K extends UpdateInputWithoutReturn = UpdateInputWithoutReturn,
+  D extends Partial<T> = Partial<T>
+>(key: Partial<T>, data: D, args: K): Promise<undefined>;
+export async function updateItem(
+  key: Partial<DynamoDBItem>,
+  data: Record<string, any>,
+  args?: Partial<UpdateItemCommandInput>
+): Promise<undefined> {
   const argsWithDefaults = withDefaults(args || {}, "updateItem");
 
   if (!Object.keys(data).includes("updatedAt")) {
@@ -105,11 +114,7 @@ export async function updateItem<
     )
     .then((res) =>
       argsWithDefaults?.ReturnValues
-        ? (unmarshallWithOptions<T>(res.Attributes) as K extends {
-            ReturnValues: string;
-          }
-            ? T
-            : undefined)
+        ? unmarshallWithOptions(res.Attributes)
         : undefined
     );
 }

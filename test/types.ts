@@ -48,6 +48,12 @@ async function playground() {
   const put4 = (await putItem<DemoItem>(item, {
     ReturnValues: "ALL_NEW",
   })) satisfies DemoItem;
+  const put5 = (await putItem(demoItem, {
+    TableName: "test",
+  })) satisfies PutItemCommandOutput;
+  const put6 = (await putItem<DemoItem>(item, {
+    TableName: "test",
+  })) satisfies PutItemCommandOutput;
 
   const query1 = (await queryItems("#PK = :PK", {
     PK: "User/1",
@@ -82,20 +88,32 @@ async function playground() {
   ])) satisfies Array<DemoItem | undefined>;
 
   const bigItem = {} as DemoItem & { big: string };
-  const update1 = (await updateItem(bigItem, { big: "5" })) satisfies undefined;
-  const update2 = (await updateItem<DemoItem>(item, {
+  const undefined1 = (await updateItem(bigItem, {
+    big: "5",
+  })) satisfies undefined;
+  const undefined2 = (await updateItem<DemoItem>(item, {
     stars: 5,
   })) satisfies undefined;
-  const update3 = (await updateItem(
+  const demoItem1 = (await updateItem(
     demoItem,
     { stars: 5 },
     { ReturnValues: "ALL_NEW" }
   )) satisfies DemoItem;
-  const update4 = await updateItem<DemoItem>(
+  const demoItem2 = (await updateItem<DemoItem>(
     item,
     { stars: 5 },
     { ReturnValues: "ALL_NEW" }
-  );
+  )) satisfies DemoItem;
+  const undefined3 = (await updateItem(
+    item,
+    { stars: 5 },
+    { TableName: "test" }
+  )) satisfies undefined;
+  const undefined4 = (await updateItem<DemoItem>(
+    item,
+    { stars: 5 },
+    { TableName: "test" }
+  )) satisfies undefined;
 
   const removeAttributes1 = await removeAttributes(demoItem, ["stars"]);
 }
