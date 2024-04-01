@@ -62,3 +62,71 @@ export function getAttributesFromExpression(expression: string, prefix = "#") {
       ?.map((attr) => attr.slice(1)) || []
   );
 }
+
+export class ExpressionAttributes {
+  nameMapping: Record<string, string> = {};
+  valueMapping: Record<string, any> = {};
+
+  nameCounter = 0;
+  valueCounter = 0;
+
+  constructor(
+    public ExpressionAttributeValues: Record<string, any> = {},
+    public ExpressionAttributeNames: Record<string, string> = {}
+  ) {}
+
+  appendNames(names: string[]) {
+    names.forEach((name) => {
+      const parts = name.split(".");
+      parts.forEach((part) => {
+        if (!this.nameMapping[part]) {
+          const newName = `#${this.nameCounter++}`;
+          this.nameMapping[part] = newName;
+          this.ExpressionAttributeNames[newName] = part;
+        }
+      });
+    });
+  }
+  appendValues(values: Record<string, any>) {
+    Object.entries(values).forEach(([key, value]) => {
+      const newValueName = `:${this.valueCounter++}`;
+      this.valueMapping[key] = newValueName;
+      this.ExpressionAttributeValues[newValueName] = value;
+    });
+  }
+  appendBoth(values: Record<string, any>) {
+    this.appendNames(Object.keys(values));
+    this.appendValues(values);
+  }
+
+  getAttributes() {
+    const marshalled = marshallWithOptions(this.ExpressionAttributeValues);
+    return {
+      ExpressionAttributeNames: this.ExpressionAttributeNames,
+      ...(Object.keys(marshalled).length > 0 && {
+        ExpressionAttributeValues: marshalled,
+      }),
+    };
+  }
+  getName(attributeName: string) {
+    return attributeName
+      .split(".")
+      .map((part) => this.nameMapping[part])
+      .join(".");
+  }
+  getValue(attributeName: string) {
+    return this.valueMapping[attributeName];
+  }
+}
+
+export const getItemKey = (
+  item: Record<string, any>,
+  args?: { TableName?: string }
+) => {
+  const { hash, range } = getTableSchema(args?.TableName);
+
+  return JSON.stringify({
+    [hash]: item[hash],
+    ...(range && { [range]: item[range] }),
+  });
+};
