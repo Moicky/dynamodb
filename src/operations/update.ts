@@ -95,19 +95,18 @@ export async function updateItem(
   const UpdateExpression =
     "SET " + attributesToUpdate.map((key) => `#${key} = :${key}`).join(", ");
 
+  // @ts-ignore
   return getClient()
     .send(
       new UpdateItemCommand({
         Key: stripKey(key, argsWithDefaults),
         UpdateExpression,
-        ExpressionAttributeValues: getAttributeValues(data, [
-          ...attributesToUpdate,
-          ...valuesInCondition,
-        ]),
-        ExpressionAttributeNames: getAttributeNames(data, [
-          ...attributesToUpdate,
-          ...namesInCondition,
-        ]),
+        ExpressionAttributeValues: getAttributeValues(data, {
+          attributesToGet: [...attributesToUpdate, ...valuesInCondition],
+        }),
+        ExpressionAttributeNames: getAttributeNames(data, {
+          attributesToGet: [...attributesToUpdate, ...namesInCondition],
+        }),
         ...argsWithDefaults,
         TableName: argsWithDefaults?.TableName || getDefaultTable(),
       })

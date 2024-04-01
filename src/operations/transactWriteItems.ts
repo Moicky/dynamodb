@@ -131,14 +131,17 @@ function handleExpressionAttributes(
   data?: Record<string, any>
 ) {
   return {
-    ExpressionAttributeValues: getAttributeValues(
-      data || {},
-      getAttributesFromExpression(rest.ConditionExpression || "", ":")
-    ),
-    ExpressionAttributeNames: getAttributeNames(
-      data || {},
-      getAttributesFromExpression(rest.ConditionExpression || "")
-    ),
+    ExpressionAttributeValues: getAttributeValues(data || {}, {
+      attributesToGet: getAttributesFromExpression(
+        rest.ConditionExpression || "",
+        ":"
+      ),
+    }),
+    ExpressionAttributeNames: getAttributeNames(data || {}, {
+      attributesToGet: getAttributesFromExpression(
+        rest.ConditionExpression || ""
+      ),
+    }),
   };
 }
 
@@ -217,9 +220,11 @@ function handleUpdateItem(
       ExpressionAttributeValues: getAttributeValues(mergedData),
       ExpressionAttributeNames: getAttributeNames(
         {},
-        getAttributesFromExpression(rest.ConditionExpression || "").concat(
-          Object.keys(populatedData)
-        )
+        {
+          attributesToGet: getAttributesFromExpression(
+            rest.ConditionExpression || ""
+          ).concat(Object.keys(populatedData)),
+        }
       ),
       ...rest,
       TableName: rest.TableName || args.table,

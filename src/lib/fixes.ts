@@ -73,7 +73,7 @@ const handleIndex = (
 };
 
 /**
- * Returns the current {@link DynamoDBFixes} used for all operations.
+ * Applies fixes in arguments for Query/Scan operations.
  * @param args - The arguments to override the default arguments with
  * @returns The merged arguments
  * @private
@@ -86,14 +86,14 @@ export const withFixes = (
 };
 
 /**
- * Returns the current {@link DynamoDBFixes} used for all operations.
+ * Returns the default {@link DynamoDBFixes} used for all operations.
  * @returns The current {@link DynamoDBFixes}
  * @private
  */
 export const getDefaultFixes = () => defaults;
 
 /**
- * Returns the current {@link DynamoDBFixes} used for all operations.
+ * Marshalls the input using {@link marshall} with the global options.
  * @param input - The input to marshall
  * @returns The marshalled input
  * @private
@@ -102,7 +102,7 @@ export const marshallWithOptions = (input: Parameters<typeof marshall>[0]) =>
   marshall(input, fixes.marshallOptions);
 
 /**
- * Returns the current {@link DynamoDBFixes} used for all operations.
+ * Unmarshalls the input using {@link unmarshall} with the global options.
  * @param input - The input to unmarshall
  * @returns The unmarshalled input
  * @private

@@ -5,7 +5,10 @@ import { getTableSchema } from "./schemas";
 // we remove any other attributes from the item if they are present and passed as
 // key parameter to any of the functions below (getItem, updateItem, deleteItem...)
 
-export function stripKey(key: any, args?: { TableName?: string }) {
+export function stripKey(
+  key: Record<string, any>,
+  args?: { TableName?: string }
+) {
   const { hash, range } = getTableSchema(args?.TableName);
   return marshallWithOptions({
     [hash]: key[hash],
@@ -21,19 +24,31 @@ export function splitEvery<T>(items: T[], limit = 25) {
   return batches;
 }
 
-export function getAttributeValues(key: any, attributesToGet?: string[]) {
+export function getAttributeValues(
+  key: Record<string, any>,
+  {
+    attributesToGet,
+    prefix = ":",
+  }: { attributesToGet?: string[]; prefix?: string } = {}
+) {
   return marshallWithOptions(
     (attributesToGet || Object.keys(key)).reduce((acc, keyName) => {
-      acc[`:${keyName}`] = key[keyName];
+      acc[`${prefix}${keyName}`] = key[keyName];
       return acc;
     }, {})
   );
 }
 
-export function getAttributeNames(key: any, attributesToGet?: string[]) {
+export function getAttributeNames(
+  key: Record<string, any>,
+  {
+    attributesToGet,
+    prefix = "#",
+  }: { attributesToGet?: string[]; prefix?: string } = {}
+) {
   return (attributesToGet || Object.keys(key)).reduce<Record<string, string>>(
     (acc, keyName) => {
-      acc[`#${keyName}`] = keyName;
+      acc[`${prefix}${keyName}`] = keyName;
       return acc;
     },
     {}

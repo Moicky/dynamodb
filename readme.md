@@ -452,7 +452,7 @@ const result = await client
   .then((result) => unmarshall(result.Attributes));
 
 // With helpers
-import { updateItem } from "@aws-sdk/lib-dynamodb";
+import { updateItem } from "@moicky/dynamodb";
 
 const result = await updateItem(
   { PK: "User/1", SK: "Book/1" },

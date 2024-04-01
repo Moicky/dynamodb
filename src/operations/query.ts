@@ -35,14 +35,18 @@ async function _query(
   return getClient().send(
     new QueryCommand({
       KeyConditionExpression: keyCondition,
-      ExpressionAttributeValues: getAttributeValues(key, [
-        ...getAttributesFromExpression(keyCondition, ":"),
-        ...getAttributesFromExpression(args?.FilterExpression || "", ":"),
-      ]),
-      ExpressionAttributeNames: getAttributeNames(key, [
-        ...getAttributesFromExpression(keyCondition),
-        ...getAttributesFromExpression(args?.FilterExpression || ""),
-      ]),
+      ExpressionAttributeValues: getAttributeValues(key, {
+        attributesToGet: [
+          ...getAttributesFromExpression(keyCondition, ":"),
+          ...getAttributesFromExpression(args?.FilterExpression || "", ":"),
+        ],
+      }),
+      ExpressionAttributeNames: getAttributeNames(key, {
+        attributesToGet: [
+          ...getAttributesFromExpression(keyCondition),
+          ...getAttributesFromExpression(args?.FilterExpression || ""),
+        ],
+      }),
       ...args,
       TableName: args?.TableName || getDefaultTable(),
     })
@@ -141,7 +145,7 @@ export async function queryAllItems<T extends DynamoDBItem = DynamoDBItem>(
 
   let data = await _query(keyCondition, key, args);
   while (data.LastEvaluatedKey) {
-    if (!Object.hasOwn(args, "Limit") || data.Items.length < args?.Limit) {
+    if (!("Limit" in args) || data.Items.length < args?.Limit) {
       let helper = await _query(keyCondition, key, {
         ...args,
         ExclusiveStartKey: data.LastEvaluatedKey,
@@ -304,7 +308,7 @@ export async function queryPaginatedItems<
   data.Items = data.Items || [];
   direction === "previous" && data.Items.reverse();
 
-  const applySchema = (item: DynamoDBItem) => {
+  const applySchema = (item: Record<string, any>) => {
     return keyAttributes.reduce(
       (acc, key) => ({ ...acc, [key]: item[key] }),
       {}
