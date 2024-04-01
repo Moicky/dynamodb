@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { Transaction } from "..";
-import { getItems, queryAllItems } from "../../operations";
+import { getItems, putItem, queryAllItems } from "../../operations";
 import { DynamoDBItem } from "../../types";
 import { DynamoDBItemKey, ItemWithKey } from "../types";
 import { DynamoDBReference, ReferenceMetadata, ResolvedItem } from "./types";
@@ -80,6 +80,24 @@ const injectRefs = (item: any, refs: Record<string, ItemWithKey>) => {
 
   return item;
 };
+export const createCustomReference = async (
+  baseItem: DynamoDBItemKey,
+  references: DynamoDBItemKey,
+  onAttribute?: string
+) =>
+  putItem({
+    PK: "dynamodb:reference",
+    SK: randomUUID(),
+    item: {
+      PK: baseItem.PK,
+      ...(baseItem.SK && { SK: baseItem.SK }),
+    },
+    references: {
+      PK: references.PK,
+      ...(references.SK && { SK: references.SK }),
+    },
+    onAttribute: onAttribute || "",
+  } satisfies ReferenceMetadata);
 
 export const resolveReferences = async <T extends DynamoDBItem>(
   item: T

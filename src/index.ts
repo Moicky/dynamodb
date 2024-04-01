@@ -1,8 +1,13 @@
 export * from "./lib";
 export * from "./operations";
 export * from "./transactions";
-export { getDependencies, resolveReferences } from "./transactions/references";
+export {
+  createCustomReference,
+  getDependencies,
+  resolveReferences,
+} from "./transactions/references";
 export type {
+  ReferenceMetadata,
   ReferenceTo,
   ResolvedItem,
   WithoutReferences,
