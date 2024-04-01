@@ -30,7 +30,7 @@ import {
   UpdateOperation,
 } from "./types";
 
-// https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/Package/-aws-sdk-client-dynamodb/Interface/TransactWriteItemsCommandInput/
+// https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_TransactWriteItems.html
 const OPERATIONS_LIMIT = 100;
 
 export class Transaction {
