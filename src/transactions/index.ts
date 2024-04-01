@@ -26,6 +26,7 @@ import {
   DynamoDBItemKey,
   ItemOperation,
   ItemWithKey,
+  OnlyKey,
   UpdateAction,
   UpdateOperation,
 } from "./types";
@@ -69,7 +70,10 @@ export class Transaction {
 
     return new CreateOperations<T>(createOperation, this);
   }
-  update<T extends DynamoDBItemKey>(item: T, args?: UpdateOperation["args"]) {
+  update<T extends DynamoDBItemKey>(
+    item: OnlyKey<T>,
+    args?: UpdateOperation["args"]
+  ) {
     const itemKey = this.getItemKey(item, args?.TableName);
 
     const updateOperation: UpdateOperation = {

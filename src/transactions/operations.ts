@@ -6,8 +6,8 @@ import { DynamoDBReference } from "./references/types";
 import {
   ConditionOperation,
   CreateOperation,
-  DotNotation,
   DynamoDBItemKey,
+  DynamoDBSet,
   ItemWithKey,
   NestedParams,
   NestedTypedParams,
@@ -94,13 +94,19 @@ export class UpdateOperations<U extends DynamoDBItem> {
     this.operation.actions.push({ _type: "add", values });
     return this;
   }
-  removeAttributes(...attributes: DotNotation<WithoutKey<U>>[]) {
+  removeAttributes(...attributes: string[]) {
     if (attributes.length === 0) return this;
     this.operation.actions.push({ _type: "remove", attributes });
     return this;
   }
 
-  addItemsToSet(values: NestedTypedParams<U, Set<any>>) {
+  addItemsToSet(
+    values: {
+      [Key in keyof U as NonNullable<U[Key]> extends DynamoDBSet
+        ? Key
+        : never]?: U[Key] extends Set<infer type> ? Set<type> | type[] : never;
+    } & NestedParams<Set<any> | any[]>
+  ) {
     if (Object.keys(values).length === 0) return this;
 
     this.operation.actions.push({

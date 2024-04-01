@@ -7,6 +7,7 @@ export type DynamoDBItemKey = {
 };
 export type ItemWithKey = DynamoDBItem & DynamoDBItemKey;
 export type WithoutKey<T> = Omit<T, keyof DynamoDBItemKey>;
+export type OnlyKey<T extends DynamoDBItemKey> = Pick<T, keyof DynamoDBItemKey>;
 export type Prettify<T> = { [key in keyof T]: T[key] } & {};
 
 export type CreateOperation = {
@@ -61,13 +62,3 @@ export type NestedTypedParams<
 
 export type DynamoDBSetMember = number | string | undefined;
 export type DynamoDBSet = Set<DynamoDBSetMember>;
-
-export type DotNotation<T, Prefix extends string = ""> = {
-  [K in keyof T & string]: T[K] extends object
-    ? T[K] extends Array<any>
-      ? `${Prefix}${K}` | `${Prefix}${K}[${number}]`
-      : T[K] extends Set<any>
-      ? `${Prefix}${K}`
-      : `${Prefix}${K}` | DotNotation<T[K], `${Prefix}${K}.`>
-    : `${Prefix}${K}`;
-}[keyof T & string];
