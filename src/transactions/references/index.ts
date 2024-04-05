@@ -85,19 +85,22 @@ export const createCustomReference = async (
   references: DynamoDBItemKey,
   onAttribute?: string
 ) =>
-  putItem({
-    PK: "dynamodb:reference",
-    SK: randomUUID(),
-    item: {
-      PK: baseItem.PK,
-      ...(baseItem.SK && { SK: baseItem.SK }),
-    },
-    references: {
-      PK: references.PK,
-      ...(references.SK && { SK: references.SK }),
-    },
-    onAttribute: onAttribute || "",
-  } satisfies ReferenceMetadata);
+  putItem(
+    {
+      PK: "dynamodb:reference",
+      SK: randomUUID(),
+      item: {
+        PK: baseItem.PK,
+        ...(baseItem.SK && { SK: baseItem.SK }),
+      },
+      references: {
+        PK: references.PK,
+        ...(references.SK && { SK: references.SK }),
+      },
+      onAttribute: onAttribute || "",
+    } satisfies ReferenceMetadata,
+    { ReturnValues: "ALL_NEW" }
+  );
 
 export const resolveReferences = async <T extends DynamoDBItem>(
   item: T
@@ -116,9 +119,7 @@ export const resolveReferences = async <T extends DynamoDBItem>(
   return injectRefs(resolvedItem, fetchedRefs);
 };
 
-export const getDependencies = async <T extends ItemWithKey = ItemWithKey>(
-  item: ItemWithKey
-) =>
+export const getDependencies = async (item: ItemWithKey) =>
   queryAllItems<ReferenceMetadata>(
     "#PK = :PK",
     {
@@ -129,7 +130,14 @@ export const getDependencies = async <T extends ItemWithKey = ItemWithKey>(
       },
     },
     { FilterExpression: "#references = :references" }
-  ).then((refs) =>
+  );
+
+export const getResolvedDependencies = async <
+  T extends ItemWithKey = ItemWithKey
+>(
+  item: ItemWithKey
+) =>
+  getDependencies(item).then((refs) =>
     getItems(
       refs
         .map(({ item }) => item)
