@@ -3,7 +3,7 @@ import { DynamoDBItem } from "../types";
 
 export type DynamoDBItemKey = {
   PK: string;
-  SK?: string;
+  SK?: string | number | undefined;
 };
 export type ItemWithKey = DynamoDBItem & DynamoDBItemKey;
 export type WithoutKey<T> = Omit<T, keyof DynamoDBItemKey>;
