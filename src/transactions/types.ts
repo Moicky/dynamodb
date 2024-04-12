@@ -2,7 +2,7 @@ import { ConditionCheck, Delete, Put, Update } from "@aws-sdk/client-dynamodb";
 import { DynamoDBItem } from "../types";
 
 export type DynamoDBItemKey = {
-  PK: string;
+  PK: string | number;
   SK?: string | number | undefined;
 };
 export type ItemWithKey = DynamoDBItem & DynamoDBItemKey;
