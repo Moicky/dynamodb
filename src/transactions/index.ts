@@ -222,8 +222,6 @@ export class Transaction {
       ...args,
     } satisfies TransactWriteItemsCommandInput;
 
-    return getClient()
-      .send(new TransactWriteItemsCommand(input))
-      .catch((err) => ({ ...err, args: input }));
+    return getClient().send(new TransactWriteItemsCommand(input));
   }
 }
