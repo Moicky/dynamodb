@@ -1,5 +1,10 @@
 import { Transaction } from ".";
-import { getAttributeNames, getAttributeValues, getItemKey } from "../lib";
+import {
+  getAttributeNames,
+  getAttributeValues,
+  getAttributesFromExpression,
+  getItemKey,
+} from "../lib";
 import { DynamoDBItem } from "../types";
 import { createReference } from "./references";
 import { DynamoDBReference } from "./references/types";
@@ -135,8 +140,13 @@ export class UpdateOperations<U extends DynamoDBItem> {
     this.operation.args = {
       ...this.operation.args,
       ConditionExpression: expression,
-      ExpressionAttributeNames: getAttributeNames(values),
-      ExpressionAttributeValues: Object.keys(values).reduce((acc, keyName) => {
+      ExpressionAttributeNames: getAttributeNames(values, {
+        attributesToGet: getAttributesFromExpression(expression),
+      }),
+      ExpressionAttributeValues: getAttributesFromExpression(
+        expression,
+        ":"
+      ).reduce((acc, keyName) => {
         acc[`:${keyName}`] = values[keyName];
         return acc;
       }, {}),
