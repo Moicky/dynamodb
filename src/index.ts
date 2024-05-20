@@ -7,6 +7,12 @@ export {
   resolveReferences,
 } from "./transactions/references";
 export type {
+  DynamoDBItemKey,
+  ItemWithKey,
+  Prettify,
+  DynamoDBSet,
+} from "./transactions/types";
+export type {
   ReferenceMetadata,
   ReferenceTo,
   ResolvedItem,
