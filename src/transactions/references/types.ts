@@ -1,7 +1,7 @@
 import { DynamoDBItem } from "../../types";
 import { DynamoDBItemKey, ItemWithKey } from "../types";
 
-export type DynamoDBReference<T extends ItemWithKey = ItemWithKey> =
+export type DynamoDBReference<T extends DynamoDBItemKey = DynamoDBItemKey> =
   T extends any[]
     ? never
     : {

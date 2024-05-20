@@ -13,7 +13,7 @@ export const createReference = (
 
   const referenceKey = {
     PK: references.PK,
-    ...(references.SK && { SK: references.SK }),
+    ...(references.SK !== undefined && { SK: references.SK }),
   };
 
   const referenceItem: ReferenceMetadata = {
@@ -21,7 +21,7 @@ export const createReference = (
     SK: randomUUID(),
     item: {
       PK: item.PK,
-      ...(item.SK && { SK: item.SK }),
+      ...(item.SK !== undefined && { SK: item.SK }),
     },
     references: referenceKey,
     onAttribute,
@@ -91,11 +91,11 @@ export const createCustomReference = async (
       SK: randomUUID(),
       item: {
         PK: baseItem.PK,
-        ...(baseItem.SK && { SK: baseItem.SK }),
+        ...(baseItem.SK !== undefined && { SK: baseItem.SK }),
       },
       references: {
         PK: references.PK,
-        ...(references.SK && { SK: references.SK }),
+        ...(references.SK !== undefined && { SK: references.SK }),
       },
       onAttribute: onAttribute || "",
     } satisfies ReferenceMetadata,
@@ -126,7 +126,7 @@ export const getDependencies = async (item: ItemWithKey) =>
       PK: "dynamodb:reference",
       references: {
         PK: item.PK,
-        ...(item.SK && { SK: item.SK }),
+        ...(item.SK !== undefined && { SK: item.SK }),
       },
     },
     { FilterExpression: "#references = :references" }
