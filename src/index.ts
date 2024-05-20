@@ -13,6 +13,7 @@ export type {
   DynamoDBSet,
 } from "./transactions/types";
 export type {
+  DynamoDBReference,
   ReferenceMetadata,
   ReferenceTo,
   ResolvedItem,
