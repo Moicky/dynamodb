@@ -161,6 +161,9 @@ export async function queryAllItems<T extends DynamoDBItem = DynamoDBItem>(
       break;
     }
   }
+  if (args.Limit && data.Items.length > args.Limit) {
+    data.Items = data.Items.slice(0, args.Limit);
+  }
   return (data?.Items || [])
     .map((item) => item && unmarshallWithOptions<T>(item))
     .filter(Boolean);
