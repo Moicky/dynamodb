@@ -284,6 +284,62 @@ const id4 = await getAscendingId({
 console.log(id4); // "00000010"
 ```
 
+### TransactWriteItems
+
+```ts
+import { transactWriteItems } from "@moicky/dynamodb";
+
+// Perform a TransactWriteItems operation
+const response = await transactWriteItems([
+  {
+    Put: {
+      item: {
+        PK: "User/1",
+        SK: "Book/1",
+        title: "The Great Gatsby",
+        author: "F. Scott Fitzgerald",
+        released: 1925,
+      },
+    },
+  },
+  {
+    Update: {
+      key: { PK: "User/1", SK: "Book/1" },
+      updateData: { title: "The Great Gatsby - Updated" },
+    },
+  },
+  {
+    Delete: {
+      key: { PK: "User/1", SK: "Book/1" },
+    },
+  },
+  {
+    ConditionCheck: {
+      key: { PK: "User/1", SK: "Book/1" },
+      ConditionExpression: "#title = :title",
+      conditionData: { title: "The Great Gatsby" },
+    },
+  },
+]);
+
+console.log(response);
+```
+
+### TransactGetItems
+
+```ts
+import { transactGetItems } from "@moicky/dynamodb";
+
+// Perform a TransactGetItems operation
+const items = await transactGetItems([
+  { key: { PK: "User/1", SK: "Book/1" } },
+  { key: { PK: "User/1", SK: "Book/2" } },
+  { key: { PK: "User/1", SK: "Book/3" } },
+]);
+
+console.log(items);
+```
+
 ## Configuring global defaults
 
 Global defaults can be configured using the `initDefaults` function. This allows to provide but still override every property of the `args` parameter.

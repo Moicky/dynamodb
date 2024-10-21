@@ -56,6 +56,50 @@ type ResponseItem = Pick<ItemCollectionMetrics, "SizeEstimateRangeGB"> & {
   Key: Record<string, any>;
 };
 
+/**
+ * Performs a TransactWriteItems operation against DynamoDB. This allows you to perform multiple write operations in a single transaction.
+ * @param transactItems - Array of items to transact. Each item can be a Put, Update, Delete, or ConditionCheck operation.
+ * @param args - The additional arguments to override or specify for {@link TransactWriteItemsCommandInput}
+ * @returns A promise that resolves to a record of response items
+ *
+ * @example
+ * Perform a TransactWriteItems operation
+ * ```javascript
+ * const response = await transactWriteItems([
+ *   {
+ *     Put: {
+ *       item: {
+ *         PK: "User/1",
+ *         SK: "Book/1",
+ *         title: "The Great Gatsby",
+ *         author: "F. Scott Fitzgerald",
+ *         released: 1925,
+ *       },
+ *     },
+ *   },
+ *   {
+ *     Update: {
+ *       key: { PK: "User/1", SK: "Book/1" },
+ *       updateData: { title: "The Great Gatsby - Updated" },
+ *     },
+ *   },
+ *   {
+ *     Delete: {
+ *       key: { PK: "User/1", SK: "Book/1" },
+ *     },
+ *   },
+ *   {
+ *     ConditionCheck: {
+ *       key: { PK: "User/1", SK: "Book/1" },
+ *       ConditionExpression: "#title = :title",
+ *       conditionData: { title: "The Great Gatsby" },
+ *     },
+ *   },
+ * ]);
+ *
+ * console.log(response);
+ * ```
+ */
 export async function transactWriteItems(
   transactItems: TransactItem[],
   args: TransactWriteItemsInput = {}
