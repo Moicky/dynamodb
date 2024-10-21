@@ -59,4 +59,9 @@ describe("get operations", () => {
 
     expect(items).toHaveLength(0);
   });
+
+  it("should retrieve all items by handling lastEvaluatedKey", async () => {
+    const items = await getAllItems();
+    expect(items.filter((item) => item?.PK === PK)).toHaveLength(itemCount);
+  });
 });
