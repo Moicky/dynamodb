@@ -136,4 +136,26 @@ describe("query operations", () => {
       expect(pageResults.hasNextPage).toEqual(true);
     }
   });
+
+  it("should resolve placeholders in ProjectionExpression", async () => {
+    const items = await queryItems(
+      "#PK = :PK",
+      { PK },
+      { ProjectionExpression: "#title, #author" }
+    );
+    expect(items.length).toBeGreaterThan(0);
+    expect(items[0]).toHaveProperty("title");
+    expect(items[0]).toHaveProperty("author");
+  });
+
+  it("should resolve placeholders in ProjectionExpression without filters", async () => {
+    const items = await queryItems(
+      "#PK = :PK",
+      { PK },
+      { ProjectionExpression: "#title, #author" }
+    );
+    expect(items.length).toBeGreaterThan(0);
+    expect(items[0]).toHaveProperty("title");
+    expect(items[0]).toHaveProperty("author");
+  });
 });

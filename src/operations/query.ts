@@ -45,6 +45,7 @@ async function _query(
         attributesToGet: [
           ...getAttributesFromExpression(keyCondition),
           ...getAttributesFromExpression(args?.FilterExpression || ""),
+          ...getAttributesFromExpression(args?.ProjectionExpression || ""),
         ],
       }),
       ...args,
