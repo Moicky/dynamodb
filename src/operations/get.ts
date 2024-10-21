@@ -198,12 +198,24 @@ export async function getAllItems<T extends DynamoDBItem = DynamoDBItem>(
 ): Promise<T[]> {
   args = withFixes(withDefaults(args, "getAllItems"));
 
-  return getClient()
-    .send(
+  let items: T[] = [];
+  let lastEvaluatedKey: Record<string, any> | undefined;
+
+  do {
+    const response = await getClient().send(
       new ScanCommand({
         ...args,
         TableName: args?.TableName || getDefaultTable(),
+        ExclusiveStartKey: lastEvaluatedKey,
       })
-    )
-    .then((res) => res.Items.map((item) => unmarshallWithOptions<T>(item)));
+    );
+
+    items = items.concat(
+      response.Items.map((item) => unmarshallWithOptions<T>(item))
+    );
+
+    lastEvaluatedKey = response.LastEvaluatedKey;
+  } while (lastEvaluatedKey);
+
+  return items;
 }
