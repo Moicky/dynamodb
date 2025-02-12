@@ -1,6 +1,6 @@
 {
   "name": "@moicky/dynamodb",
-  "version": "2.5.10",
+  "version": "2.6.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "description": "Contains a collection of convenience functions for working with AWS DynamoDB",
@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.338.0",
+    "@aws-sdk/credential-providers": "^3.744.0",
     "@aws-sdk/util-dynamodb": "^3.338.0",
     "aws-crt": "^1.15.20"
   },
