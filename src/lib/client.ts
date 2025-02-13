@@ -8,7 +8,7 @@ let client = new DynamoDBClient({
     credentials: fromTemporaryCredentials({
       params: {
         RoleArn: process.env.DYNAMODB_ASSUME_ROLE,
-        RoleSessionName: "@moicky/dynamodb",
+        RoleSessionName: "moicky-dynamodb",
       },
     }),
   }),
