@@ -55,7 +55,7 @@ export async function putItem<
   const argsWithDefaults = withDefaults(args || {}, "putItem");
 
   if (!Object.keys(item).includes("createdAt")) {
-    item = { ...item, createdAt: Date.now() };
+    item = { ...item, createdAt: new Date().toISOString(), createdAtISO: new Date().toISOString() };
   }
   const { ReturnValues, ...otherArgs } = argsWithDefaults;
 
@@ -114,12 +114,13 @@ export async function putItems(
   args = withDefaults(args, "putItems");
 
   return new Promise(async (resolve, reject) => {
-    const now = Date.now();
+    const now = new Date().toISOString();
 
     const batches = splitEvery(
       items.map((item) => ({
         ...item,
         createdAt: item?.createdAt ?? now,
+        createdAtISO: item?.createdAtISO ?? now,
       }))
     );
     const results = [];

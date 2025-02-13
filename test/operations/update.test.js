@@ -65,4 +65,14 @@ describe("update operations", () => {
 
     expect(newItem.released).toEqual(2000);
   });
+
+  it("should set updatedAtISO attribute correctly", async () => {
+    const item = await getItem(generateItem("4"));
+    expect(item.PK).toEqual(PK);
+
+    await updateItem(item, { title: "Another New Title" });
+
+    const updatedItem = await getItem(generateItem("4"));
+    expect(updatedItem.updatedAtISO).toBe(new Date(updatedItem.updatedAt).toISOString());
+  });
 });

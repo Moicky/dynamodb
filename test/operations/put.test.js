@@ -61,4 +61,13 @@ describe("put operations", () => {
     expect(savedItems.length).toEqual(500);
     expect(savedItems.filter((item) => item).length).toEqual(500);
   });
+
+  it("should set createdAtISO attribute correctly", async () => {
+    const newItem = generateItem("1000");
+
+    await putItem(newItem);
+
+    const savedItem = await getItem(newItem);
+    expect(savedItem.createdAtISO).toBe(new Date(savedItem.createdAt).toISOString());
+  });
 });

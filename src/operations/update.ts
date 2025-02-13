@@ -77,7 +77,7 @@ export async function updateItem(
   const argsWithDefaults = withDefaults(args || {}, "updateItem");
 
   if (!Object.keys(data).includes("updatedAt")) {
-    data = { ...data, updatedAt: Date.now() };
+    data = { ...data, updatedAt: new Date().toISOString(), updatedAtISO: new Date().toISOString() };
   }
 
   const valuesInCondition = getAttributesFromExpression(
