@@ -1,17 +1,43 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { fromTemporaryCredentials } from "@aws-sdk/credential-providers";
 import { getDefaultTableSchema, initSchema } from "./schemas";
+
+const authTypes = {
+  vercel: () => {
+    if (!process.env.AWS_ROLE_ARN) return {};
+
+    return {
+      credentials: import("@vercel/functions/oidc").then(
+        ({ awsCredentialsProvider }) => ({
+          credentials: awsCredentialsProvider({
+            roleArn: process.env.AWS_ROLE_ARN,
+            roleSessionName: "moicky-dynamodb",
+          }),
+        })
+      ),
+    };
+  },
+  assumeRole: () => ({
+    ...(process.env.DYNAMODB_ASSUME_ROLE && {
+      credentials: import("@aws-sdk/credential-providers").then(
+        ({ fromTemporaryCredentials }) =>
+          fromTemporaryCredentials({
+            params: {
+              RoleArn: process.env.DYNAMODB_ASSUME_ROLE,
+              RoleSessionName: "moicky-dynamodb",
+            },
+          })
+      ),
+    }),
+  }),
+} as const;
+type AuthType = keyof typeof authTypes;
+const _authType = process.env.MOICKY_DYNAMODB_AWS_ROLE as AuthType;
+
+const authType = authTypes[_authType];
 
 let client = new DynamoDBClient({
   region: process.env.AWS_REGION || "eu-central-1",
-  ...(process.env.DYNAMODB_ASSUME_ROLE && {
-    credentials: fromTemporaryCredentials({
-      params: {
-        RoleArn: process.env.DYNAMODB_ASSUME_ROLE,
-        RoleSessionName: "moicky-dynamodb",
-      },
-    }),
-  }),
+  ...(authType && (authType() as any)),
 });
 
 const defaultTable = process.env.DYNAMODB_TABLE as string;

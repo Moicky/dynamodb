@@ -1,6 +1,6 @@
 {
   "name": "@moicky/dynamodb",
-  "version": "2.6.1",
+  "version": "2.6.2",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "description": "Contains a collection of convenience functions for working with AWS DynamoDB",
@@ -24,11 +24,12 @@
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.338.0",
-    "@aws-sdk/credential-providers": "^3.744.0",
     "@aws-sdk/util-dynamodb": "^3.338.0",
     "aws-crt": "^1.15.20"
   },
   "devDependencies": {
+    "@aws-sdk/credential-providers": "^3.744.0",
+    "@vercel/functions": "^2.0.0",
     "@types/jest": "^29.5.1",
     "@types/node": "^20.2.4",
     "dotenv": "^16.0.3",
