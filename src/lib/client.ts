@@ -16,8 +16,10 @@ const authTypes = {
       ),
     };
   },
-  assumeRole: () => ({
-    ...(process.env.DYNAMODB_ASSUME_ROLE && {
+  assumeRole: () => {
+    if (!process.env.DYNAMODB_ASSUME_ROLE) return {};
+
+    return {
       credentials: import("@aws-sdk/credential-providers").then(
         ({ fromTemporaryCredentials }) =>
           fromTemporaryCredentials({
@@ -27,8 +29,8 @@ const authTypes = {
             },
           })
       ),
-    }),
-  }),
+    };
+  },
 } as const;
 type AuthType = keyof typeof authTypes;
 const _authType = process.env.MOICKY_DYNAMODB_AWS_ROLE as AuthType;
