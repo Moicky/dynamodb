@@ -13,8 +13,8 @@ import {
   splitEvery,
   stripKey,
   unmarshallWithOptions,
+  withConfig,
   withDefaults,
-  withFixes,
 } from "../lib";
 import { DynamoDBItem } from "../types";
 
@@ -196,7 +196,7 @@ export async function getItems<T extends DynamoDBItem = DynamoDBItem>(
 export async function getAllItems<T extends DynamoDBItem = DynamoDBItem>(
   args: Partial<ScanCommandInput> = {}
 ): Promise<T[]> {
-  args = withFixes(withDefaults(args, "getAllItems"));
+  args = withConfig(withDefaults(args, "getAllItems"));
 
   let items: T[] = [];
   let lastEvaluatedKey: Record<string, any> | undefined;

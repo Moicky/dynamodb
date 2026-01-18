@@ -1,4 +1,4 @@
-const { initFixes, queryAllItems, getFixes, putItems } = require("../dist");
+const { initConfig, queryAllItems, getConfig, putItems } = require("../dist");
 
 const GSITable = process.env.GSI_TABLE;
 
@@ -26,11 +26,11 @@ describe("Fixes workflows", () => {
   });
 
   it("should init fixes", () => {
-    expect(getFixes().disableConsistantReadWhenUsingIndexes?.enabled).toEqual(
+    expect(getConfig().disableConsistantReadWhenUsingIndexes?.enabled).toEqual(
       true
     );
 
-    initFixes({
+    initConfig({
       disableConsistantReadWhenUsingIndexes: {
         enabled: true,
       },
@@ -39,7 +39,7 @@ describe("Fixes workflows", () => {
       },
     });
 
-    const newFixes = getFixes();
+    const newFixes = getConfig();
 
     expect(newFixes.disableConsistantReadWhenUsingIndexes.enabled).toEqual(
       true
@@ -48,7 +48,11 @@ describe("Fixes workflows", () => {
   });
 
   it("should crash when querying with ConsistantRead and GSIs", async () => {
-    initFixes({});
+    initConfig({
+      disableConsistantReadWhenUsingIndexes: {
+        enabled: false,
+      },
+    });
 
     await expect(
       queryAllItems(
@@ -60,7 +64,7 @@ describe("Fixes workflows", () => {
   });
 
   it("shouldn't crash when using fixes and using ConsistantRead with GSIs", async () => {
-    initFixes({
+    initConfig({
       disableConsistantReadWhenUsingIndexes: {
         enabled: true,
       },

@@ -14,12 +14,18 @@ import {
   getAttributeValues,
   getAttributesFromExpression,
   getClient,
+  getConfig,
   getDefaultTable,
+  getItemModificationTimestamp,
   marshallWithOptions,
+  splitEvery,
   stripKey,
   unmarshallWithOptions,
   withDefaults,
 } from "../lib";
+
+// https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_TransactWriteItems.html
+const OPERATIONS_LIMIT = 100;
 
 type TransactItem = {
   ConditionCheck?: Omit<ConditionCheck, "Key" | "TableName"> & {
@@ -107,65 +113,78 @@ export async function transactWriteItems(
   return new Promise(async (resolve, reject) => {
     args = withDefaults(args, "transactWriteItems");
 
-    if (transactItems.length > 100) {
-      throw new Error(
-        "[@moicky/dynamodb]: TransactWriteItems can only handle up to 100 items"
-      );
+    const table = args.TableName || getDefaultTable();
+    const shouldSplitTransactions =
+      getConfig().splitTransactionsIfAboveLimit ?? false;
+
+    if (
+      transactItems.length === 0 ||
+      (transactItems.length > OPERATIONS_LIMIT && !shouldSplitTransactions)
+    ) {
+      reject(new Error("[@moicky/dynamodb]: Invalid number of operations"));
     }
 
-    const now = Date.now();
-    const table = args.TableName || getDefaultTable();
+    const conditionCheckItems = transactItems
+      .filter((item) => item.ConditionCheck)
+      .map((item) => handleConditionCheck(item.ConditionCheck, { table }));
 
-    const populatedItems = transactItems.map((item) => {
-      if (item.ConditionCheck) {
-        return handleConditionCheck(item.ConditionCheck, { now, table });
-      } else if (item.Put) {
-        return handlePutItem(item.Put, { now, table });
-      } else if (item.Delete) {
-        return handleDeleteItem(item.Delete, { now, table });
-      } else if (item.Update) {
-        return handleUpdateItem(item.Update, { now, table });
-      } else {
-        throw new Error(
-          "[@moicky/dynamodb]: Invalid TransactItem: " + JSON.stringify(item)
-        );
-      }
-    });
+    let createdAt: any = null;
+    let updatedAt: any = null;
 
-    return getClient()
-      .send(
-        new TransactWriteItemsCommand({
-          TransactItems: populatedItems,
-          ...args,
-        })
-      )
-      .then((res) => {
-        const results: Record<string, ResponseItem[]> = {};
+    const operationItems = transactItems
+      .filter((item) => !item.ConditionCheck)
+      .map((item) => {
+        if (item.Put) {
+          createdAt ??= getItemModificationTimestamp("createdAt");
+          return handlePutItem(item.Put, { createdAt, table });
+        } else if (item.Delete) {
+          return handleDeleteItem(item.Delete, { table });
+        } else if (item.Update) {
+          updatedAt ??= getItemModificationTimestamp("updatedAt");
+          return handleUpdateItem(item.Update, { updatedAt, table });
+        } else {
+          reject(
+            new Error(
+              "[@moicky/dynamodb]: Invalid TransactItem: " +
+                JSON.stringify(item)
+            )
+          );
+        }
+      });
 
-        Object.entries(res.ItemCollectionMetrics || {}).forEach(
-          ([tableName, metrics]) => {
-            const unmarshalledMetrics = metrics.map((metric) => ({
-              Key: unmarshallWithOptions(metric.ItemCollectionKey || {}),
-              SizeEstimateRangeGB: metric.SizeEstimateRangeGB,
-            }));
+    const availableSlots = OPERATIONS_LIMIT - conditionCheckItems.length;
+    const batches = splitEvery(operationItems, availableSlots);
 
-            if (!results[tableName]) {
-              results[tableName] = [];
+    const results: Record<string, ResponseItem[]> = {};
+    for (const batch of operationItems?.length ? batches : [[]]) {
+      const populatedItems = [...conditionCheckItems, ...batch];
+
+      await getClient()
+        .send(
+          new TransactWriteItemsCommand({
+            TransactItems: populatedItems,
+            ...args,
+          })
+        )
+        .then((res) => {
+          Object.entries(res.ItemCollectionMetrics || {}).forEach(
+            ([tableName, metrics]) => {
+              const unmarshalledMetrics = metrics.map((metric) => ({
+                Key: unmarshallWithOptions(metric.ItemCollectionKey || {}),
+                SizeEstimateRangeGB: metric.SizeEstimateRangeGB,
+              }));
+
+              results[tableName] ??= [];
+              results[tableName].push(...unmarshalledMetrics);
             }
+          );
+        })
+        .catch(reject);
+    }
 
-            results[tableName].push(...unmarshalledMetrics);
-          }
-        );
-        resolve(results);
-      })
-      .catch(reject);
+    return resolve(results);
   });
 }
-
-type BaseArgs = {
-  now: number;
-  table: string;
-};
 
 function handleExpressionAttributes(
   rest: {
@@ -191,7 +210,7 @@ function handleExpressionAttributes(
 
 function handleConditionCheck(
   params: TransactItem["ConditionCheck"],
-  args: BaseArgs
+  args: { table: string }
 ): { ConditionCheck: TransactWriteItem["ConditionCheck"] } {
   const { key, conditionData, ...rest } = params;
 
@@ -207,10 +226,13 @@ function handleConditionCheck(
 
 function handlePutItem(
   params: TransactItem["Put"],
-  args: BaseArgs
+  args: { table: string; createdAt: number | string }
 ): { Put: TransactWriteItem["Put"] } {
   const populatedData = structuredClone(params.item);
-  populatedData.createdAt ??= args.now;
+
+  if (!Object.keys(populatedData).includes("createdAt")) {
+    populatedData.createdAt = args.createdAt;
+  }
 
   const { item, conditionData, ...rest } = params;
 
@@ -226,7 +248,7 @@ function handlePutItem(
 
 function handleDeleteItem(
   params: TransactItem["Delete"],
-  args: BaseArgs
+  args: { table: string }
 ): { Delete: TransactWriteItem["Delete"] } {
   const { key, conditionData, ...rest } = params;
 
@@ -242,12 +264,14 @@ function handleDeleteItem(
 
 function handleUpdateItem(
   params: TransactItem["Update"],
-  args: BaseArgs
+  args: { table: string; updatedAt: number | string }
 ): { Update: TransactWriteItem["Update"] } {
   const { key, updateData, conditionData, ...rest } = params;
 
   const populatedData = structuredClone(updateData);
-  populatedData.updatedAt ??= args.now;
+  if (!Object.keys(populatedData).includes("updatedAt")) {
+    populatedData.updatedAt = args.updatedAt;
+  }
 
   const mergedData = { ...populatedData, ...conditionData };
 

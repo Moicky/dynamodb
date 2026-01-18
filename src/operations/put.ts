@@ -10,6 +10,7 @@ import {
 import {
   getClient,
   getDefaultTable,
+  getItemModificationTimestamp,
   marshallWithOptions,
   splitEvery,
   unmarshallWithOptions,
@@ -55,7 +56,7 @@ export async function putItem<
   const argsWithDefaults = withDefaults(args || {}, "putItem");
 
   if (!Object.keys(item).includes("createdAt")) {
-    item = { ...item, createdAt: Date.now() };
+    item = { ...item, createdAt: getItemModificationTimestamp("createdAt") };
   }
   const { ReturnValues, ...otherArgs } = argsWithDefaults;
 
@@ -114,13 +115,14 @@ export async function putItems(
   args = withDefaults(args, "putItems");
 
   return new Promise(async (resolve, reject) => {
-    const now = Date.now();
+    const createdAt = getItemModificationTimestamp("createdAt");
 
     const batches = splitEvery(
       items.map((item) => ({
         ...item,
-        createdAt: item?.createdAt ?? now,
-      }))
+        createdAt: item?.createdAt ?? createdAt,
+      })),
+      25
     );
     const results = [];
 

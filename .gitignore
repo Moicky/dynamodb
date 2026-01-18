@@ -3,3 +3,4 @@ dist
 *.env
 !*.env.template
 .dccache
+**/.DS_Store

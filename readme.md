@@ -14,9 +14,11 @@ Contains convenience functions for all major dynamodb operations. Requires very 
 - 🔒 When specifying an item using its keySchema, all additional attributes (apart from keySchema attributes from `initSchema` or `PK` & `SK` as default) will be removed to avoid errors
 - 👻 Will **use placeholders** to avoid colliding with [reserved words](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ReservedWords.html) if applicable
 - 🌎 Supports globally defined default arguments for each operation ([example](#configuring-global-defaults))
-- 🔨 Supports fixes for several issues with dynamodb ([example](#applying-fixes))
+- 🔨 Supports configuration for several dynamodb behaviors and fixes ([example](#configuration))
 - 📖 Offers a convenient way to use pagination with queries ([example](#paginated-items))
 - 🗂️ Supports **transactGetItems** & **transactWriteItems**
+- ⚙️ Customizable timestamp generation for `createdAt` and `updatedAt` attributes
+- 🔄 Automatic transaction splitting for operations exceeding the 100-item limit (disabled by default)
 
 ## Installation
 
@@ -290,6 +292,9 @@ console.log(id4); // "00000010"
 import { transactWriteItems } from "@moicky/dynamodb";
 
 // Perform a TransactWriteItems operation
+// Note: By default, transactions are limited to 100 operations (AWS limit).
+// Enable automatic splitting via initConfig({ splitTransactionsIfAboveLimit: true })
+// to handle larger transactions automatically. (note that this is not recommended for transactional updates)
 const response = await transactWriteItems([
   {
     Put: {
@@ -368,14 +373,18 @@ const itemWithoutConsistentRead = await getItem(
 );
 ```
 
-## Applying fixes
+## Configuration
 
-Arguments which are passed to [marshall](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/interfaces/_aws_sdk_util_dynamodb.marshallOptions.html) and [unmarshall](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/interfaces/_aws_sdk_util_dynamodb.unmarshallOptions.html) from `@aws-sdk/util-dynamodb` can be configured using
+The package provides a unified configuration system through `initConfig` that allows you to customize various behaviors and fixes for DynamoDB operations.
+
+### Marshall/Unmarshall Options
+
+Arguments which are passed to [marshall](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/interfaces/_aws_sdk_util_dynamodb.marshallOptions.html) and [unmarshall](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/interfaces/_aws_sdk_util_dynamodb.unmarshallOptions.html) from `@aws-sdk/util-dynamodb` can be configured using:
 
 ```ts
-import { initFixes } from "@moicky/dynamodb";
+import { initConfig } from "@moicky/dynamodb";
 
-initFixes({
+initConfig({
   marshallOptions: {
     removeUndefinedValues: true,
   },
@@ -385,21 +394,54 @@ initFixes({
 });
 ```
 
-When using `GlobalSecondaryIndexes`, DynamoDb does not support using `ConsistantRead`. This is fixed by default (`ConsistantRead` is turned off) and can be configured using:
+### Consistent Read with Indexes
+
+When using `GlobalSecondaryIndexes`, DynamoDB does not support using `ConsistentRead`. This is fixed by default (`ConsistentRead` is turned off) and can be configured using:
 
 ```ts
-import { initFixes } from "@moicky/dynamodb";
+import { initConfig } from "@moicky/dynamodb";
 
-initFixes({
+initConfig({
   disableConsistantReadWhenUsingIndexes: {
-    enabled: true, // default,
+    enabled: true, // default
 
-    // Won't disable ConsistantRead if IndexName is specified here.
-    // This works because DynamoDB supports ConsistantRead on LocalSecondaryIndexes
+    // Won't disable ConsistentRead if IndexName is specified here.
+    // This works because DynamoDB supports ConsistentRead on LocalSecondaryIndexes
     stillUseOnLocalIndexes: ["localIndexName1", "localIndexName2"],
   },
 });
 ```
+
+### Custom Timestamp Generation
+
+You can customize how `createdAt` and `updatedAt` timestamps are generated for items:
+
+```ts
+import { initConfig } from "@moicky/dynamodb";
+
+initConfig({
+  itemModificationTimestamp: (field) => {
+    if (field === "createdAt") {
+      return new Date().toISOString();
+    }
+    return Date.now();
+  },
+});
+```
+
+### Transaction Splitting
+
+By default, `transactWriteItems` will reject transactions with more than 100 operations (AWS limit). You can enable automatic splitting to handle larger transactions:
+
+```ts
+import { initConfig } from "@moicky/dynamodb";
+
+initConfig({
+  splitTransactionsIfAboveLimit: true,
+});
+```
+
+When enabled, transactions exceeding 100 operations will be automatically split into multiple batches, with condition checks preserved across all batches.
 
 ## What are the benefits and why should I use it?
 

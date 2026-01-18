@@ -11,6 +11,7 @@ import {
   getAttributesFromExpression,
   getClient,
   getDefaultTable,
+  getItemModificationTimestamp,
   stripKey,
   unmarshallWithOptions,
   withDefaults,
@@ -77,7 +78,7 @@ export async function updateItem(
   const argsWithDefaults = withDefaults(args || {}, "updateItem");
 
   if (!Object.keys(data).includes("updatedAt")) {
-    data = { ...data, updatedAt: Date.now() };
+    data = { ...data, updatedAt: getItemModificationTimestamp("updatedAt") };
   }
 
   const valuesInCondition = getAttributesFromExpression(

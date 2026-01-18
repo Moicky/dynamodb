@@ -1,4 +1,5 @@
 import {
+  ItemCollectionMetrics,
   TransactWriteItem,
   TransactWriteItemsCommand,
   TransactWriteItemsCommandInput,
@@ -7,10 +8,15 @@ import {
 import {
   ExpressionAttributes,
   getClient,
+  getConfig,
   getDefaultTable,
   getItemKey,
+  getItemModificationTimestamp,
   marshallWithOptions,
+  splitEvery,
   stripKey,
+  unmarshallWithOptions,
+  withDefaults,
   type DynamoDBItem,
 } from "..";
 import {
@@ -34,20 +40,28 @@ import {
 // https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_TransactWriteItems.html
 const OPERATIONS_LIMIT = 100;
 
+type ResponseItem = Pick<ItemCollectionMetrics, "SizeEstimateRangeGB"> & {
+  Key: Record<string, any>;
+};
+
 export class Transaction {
   private tableName: string;
-  private timestamp = Date.now();
+  private createdAt: any;
+  private updatedAt: any;
   private operations: { [itemKey: string]: ItemOperation } = {};
 
   constructor({
     tableName = getDefaultTable(),
-    timestamp = Date.now(),
+    createdAt = getItemModificationTimestamp("createdAt"),
+    updatedAt = getItemModificationTimestamp("updatedAt"),
   }: {
     tableName?: string;
-    timestamp?: number;
+    createdAt?: any;
+    updatedAt?: any;
   } = {}) {
     this.tableName = tableName;
-    this.timestamp = timestamp;
+    this.createdAt = createdAt ?? getItemModificationTimestamp("createdAt");
+    this.updatedAt = updatedAt ?? getItemModificationTimestamp("updatedAt");
   }
 
   private getItemKey(item: DynamoDBItem, tableName?: string) {
@@ -79,7 +93,7 @@ export class Transaction {
     const updateOperation: UpdateOperation = {
       _type: "update",
       item,
-      actions: [{ _type: "set", values: { updatedAt: this.timestamp } }],
+      actions: [{ _type: "set", values: { updatedAt: this.updatedAt } }],
       args: { TableName: this.tableName, ...args },
     };
 
@@ -113,7 +127,7 @@ export class Transaction {
 
         return {
           Put: {
-            Item: marshallWithOptions({ createdAt: this.timestamp, ...item }),
+            Item: marshallWithOptions({ createdAt: this.createdAt, ...item }),
             ...args,
           },
         };
@@ -209,19 +223,61 @@ export class Transaction {
   async execute(
     args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>
   ) {
-    const operations = Object.values(this.operations).map((op) =>
-      this.handleOperation(op)
+    args = withDefaults(args, "transactWriteItems");
+
+    return new Promise<Record<string, ResponseItem[]>>(
+      async (resolve, reject) => {
+        const shouldSplitTransactions =
+          getConfig().splitTransactionsIfAboveLimit ?? false;
+
+        const operations = Object.values(this.operations);
+
+        if (
+          operations.length === 0 ||
+          (operations.length > OPERATIONS_LIMIT && !shouldSplitTransactions)
+        ) {
+          reject(new Error("[@moicky/dynamodb]: Invalid number of operations"));
+        }
+
+        const conditionCheckItems = operations
+          .filter((op) => op._type === "condition")
+          .map((op) => this.handleOperation(op));
+        const operationItems = operations
+          .filter((op) => op._type !== "condition")
+          .map((op) => this.handleOperation(op));
+
+        const availableSlots = OPERATIONS_LIMIT - conditionCheckItems.length;
+        const batches = splitEvery(operationItems, availableSlots);
+        const results: Record<string, ResponseItem[]> = {};
+
+        for (const batch of operationItems?.length ? batches : [[]]) {
+          const populatedItems = [...conditionCheckItems, ...batch];
+
+          await getClient()
+            .send(
+              new TransactWriteItemsCommand({
+                TransactItems: populatedItems,
+                ...args,
+              })
+            )
+            .then((res) => {
+              Object.entries(res.ItemCollectionMetrics || {}).forEach(
+                ([tableName, metrics]) => {
+                  const unmarshalledMetrics = metrics.map((metric) => ({
+                    Key: unmarshallWithOptions(metric.ItemCollectionKey || {}),
+                    SizeEstimateRangeGB: metric.SizeEstimateRangeGB,
+                  }));
+
+                  results[tableName] ??= [];
+                  results[tableName].push(...unmarshalledMetrics);
+                }
+              );
+            })
+            .catch(reject);
+        }
+
+        return resolve(results);
+      }
     );
-
-    if (operations.length === 0 || operations.length > OPERATIONS_LIMIT) {
-      throw new Error("Invalid number of operations");
-    }
-
-    const input = {
-      TransactItems: operations,
-      ...args,
-    } satisfies TransactWriteItemsCommandInput;
-
-    return getClient().send(new TransactWriteItemsCommand(input));
   }
 }

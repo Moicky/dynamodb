@@ -12,8 +12,8 @@ import {
   getDefaultTable,
   marshallWithOptions,
   unmarshallWithOptions,
+  withConfig,
   withDefaults,
-  withFixes,
 } from "../lib";
 import { DynamoDBItem } from "../types";
 
@@ -30,7 +30,7 @@ async function _query(
   key: Record<string, any>,
   args: Partial<QueryCommandInput> = {}
 ): Promise<QueryCommandOutput> {
-  args = withFixes(args);
+  args = withConfig(args);
 
   return getClient().send(
     new QueryCommand({

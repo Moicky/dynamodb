@@ -111,7 +111,7 @@ export async function deleteItems<T extends DynamoDBItem = DynamoDBItem>(
   ) as Record<string, any>[];
 
   return new Promise(async (resolve, reject) => {
-    const batches = splitEvery(uniqueKeys);
+    const batches = splitEvery(uniqueKeys, 25);
 
     if (retry > 3) return;
 

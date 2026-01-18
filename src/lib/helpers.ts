@@ -1,4 +1,4 @@
-import { marshallWithOptions } from "./fixes";
+import { marshallWithOptions } from "./config";
 import { getTableSchema } from "./schemas";
 
 // Since dynamo only accepts key atrtributes which are described in table schema
@@ -16,7 +16,7 @@ export function stripKey(
   });
 }
 
-export function splitEvery<T>(items: T[], limit = 25) {
+export function splitEvery<T>(items: T[], limit: number) {
   const batches: T[][] = [];
   for (let i = 0; i < items.length; i += limit) {
     batches.push(items.slice(i, i + limit));

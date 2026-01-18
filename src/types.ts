@@ -1,4 +1,4 @@
 export type DynamoDBItem = Record<string, any> & {
-  createdAt?: number;
-  updatedAt?: number;
+  createdAt?: any;
+  updatedAt?: any;
 };

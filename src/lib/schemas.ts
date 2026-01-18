@@ -60,17 +60,23 @@ export const validateSchema = (schema: KeySchemaCollection) => {
     const { hash } = schema[table];
 
     if (!hash) {
-      throw new Error(`No hash key provided for table ${table}`);
+      throw new Error(
+        `[@moicky/dynamodb]: No hash key provided for table ${table}`
+      );
     }
 
     if (typeof hash !== "string") {
-      throw new Error(`Invalid hash key provided for table ${table}`);
+      throw new Error(
+        `[@moicky/dynamodb]: Invalid hash key provided for table ${table}`
+      );
     }
 
     const { range } = schema[table];
 
     if (range && typeof range !== "string") {
-      throw new Error(`Invalid range key provided for table ${table}`);
+      throw new Error(
+        `[@moicky/dynamodb]: Invalid range key provided for table ${table}`
+      );
     }
   });
 

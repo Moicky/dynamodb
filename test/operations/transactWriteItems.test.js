@@ -211,4 +211,31 @@ describe("transactWriteItems operations", () => {
 
     expect(response).toEqual({});
   });
+
+  it("should return ItemCollectionMetrics after update operations", async () => {
+    const itemCount = 5;
+    const itemsToUpdate = Array.from({ length: itemCount }).map((_, i) =>
+      generateItem((i + 1000).toString())
+    );
+
+    const response = await transactWriteItems(
+      itemsToUpdate.map((item) => ({
+        Update: {
+          key: item,
+          updateData: {
+            isRented: true,
+          },
+        },
+      })),
+      { ReturnItemCollectionMetrics: "SIZE" }
+    );
+
+    expect(response).toBeDefined();
+    expect(typeof response).toBe("object");
+
+    // Verify the updated items exist
+    const updatedItems = await getItems(itemsToUpdate);
+    expect(updatedItems.filter(Boolean).length).toEqual(itemCount);
+    expect(updatedItems.every((item) => item.isRented === true)).toBe(true);
+  });
 });
