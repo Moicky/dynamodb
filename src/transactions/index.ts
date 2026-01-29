@@ -49,19 +49,26 @@ export class Transaction {
   private createdAt: any;
   private updatedAt: any;
   private operations: { [itemKey: string]: ItemOperation } = {};
+  private shouldSplitTransactions: boolean;
 
   constructor({
-    tableName = getDefaultTable(),
-    createdAt = getItemModificationTimestamp("createdAt"),
-    updatedAt = getItemModificationTimestamp("updatedAt"),
+    tableName,
+    createdAt,
+    updatedAt,
+    shouldSplitTransactions,
   }: {
     tableName?: string;
     createdAt?: any;
     updatedAt?: any;
+    shouldSplitTransactions?: boolean;
   } = {}) {
-    this.tableName = tableName;
+    this.tableName = tableName ?? getDefaultTable();
     this.createdAt = createdAt ?? getItemModificationTimestamp("createdAt");
     this.updatedAt = updatedAt ?? getItemModificationTimestamp("updatedAt");
+    this.shouldSplitTransactions =
+      shouldSplitTransactions ??
+      getConfig().splitTransactionsIfAboveLimit ??
+      false;
   }
 
   private getItemKey(item: DynamoDBItem, tableName?: string) {
@@ -227,14 +234,12 @@ export class Transaction {
 
     return new Promise<Record<string, ResponseItem[]>>(
       async (resolve, reject) => {
-        const shouldSplitTransactions =
-          getConfig().splitTransactionsIfAboveLimit ?? false;
-
         const operations = Object.values(this.operations);
 
         if (
           operations.length === 0 ||
-          (operations.length > OPERATIONS_LIMIT && !shouldSplitTransactions)
+          (operations.length > OPERATIONS_LIMIT &&
+            !this.shouldSplitTransactions)
         ) {
           reject(new Error("[@moicky/dynamodb]: Invalid number of operations"));
         }
