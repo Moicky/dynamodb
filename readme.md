@@ -108,7 +108,7 @@ await putItems([
 ```ts
 import { getItem, getItems, getAllItems } from "@moicky/dynamodb";
 
-// Passing more than just the key is possible, but will be removed to avoid errors
+// Passing more than just the key is possible, but will be discarded under the hood before forwarding to AWS
 
 // Get single item
 await getItem({
@@ -126,7 +126,7 @@ await getItems([
   {
     PK: "User/1",
     SK: "Book/1",
-    title: "The Great Gatsby", // additional fields will be removed before sending
+    title: "The Great Gatsby", // additional fields will be discarded before sending
     author: "F. Scott Fitzgerald",
     released: 1925,
   },
@@ -146,7 +146,7 @@ import { deleteItem, deleteItems } from "@moicky/dynamodb";
 await deleteItem({
   PK: "User/1",
   SK: "Book/1",
-  title: "The Great Gatsby", // additional fields will be removed before sending to avoid errors
+  title: "The Great Gatsby", // additional fields will be discarded before sending to AWS
   author: "F. Scott Fitzgerald",
   released: 1925,
 });
