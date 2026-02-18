@@ -1,5 +1,6 @@
 require("dotenv/config");
 
+const { ConditionalCheckFailedException } = require("@aws-sdk/client-dynamodb");
 const {
   Transaction,
   getItems,
@@ -488,5 +489,40 @@ describe("Transaction operations", () => {
       expect(newItem.temp).toEqual(2);
       expect(newItem.stars).toEqual(item.stars);
     });
+  });
+
+  it("should adjust a number in a nested object", async () => {
+    const item = generateItem("9002");
+    const prevItem = {
+      ...item,
+      nested: {
+        number: 1,
+      },
+    };
+    await putItem(prevItem);
+
+    const transaction = new Transaction();
+    transaction
+      .update(item)
+      .adjustNumber({
+        "nested.number": 2,
+      })
+      .onCondition({
+        expression: "#nested.#number < :number",
+        values: {
+          number: 10,
+        },
+      });
+
+    await transaction.execute().catch((e) => {
+      console.log(e);
+      console.log(e.CancellationReasons);
+      if (e?.CancellationReasons?.[0]?.Code === "ConditionalCheckFailed") {
+        console.log("hi");
+      }
+    });
+
+    const newItem = await getItem(item, { ConsistentRead: true });
+    expect(newItem.nested.number).toEqual(3);
   });
 });

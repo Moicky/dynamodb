@@ -14,13 +14,19 @@ import {
 } from "../dist";
 
 type DemoItem = {
-  PK: string;
+  PK: `User/${string}`;
   SK: string;
   stars: number;
 };
 
+type DemoItem2 = {
+  PK: `Demo/${string}`;
+  SK: string;
+  name: string;
+};
+
 const item = {
-  PK: "User/1",
+  PK: "User/1" as const,
   SK: "Book/1",
   stars: 5,
 };
@@ -116,4 +122,23 @@ async function playground() {
   )) satisfies undefined;
 
   const removeAttributes1 = await removeAttributes(demoItem, ["stars"]);
+
+  const a: DemoItem = {
+    PK: "User/1",
+    SK: "Book/1",
+    stars: 5,
+  };
+
+  const itemsWithTypedArray = await getItems<[DemoItem, DemoItem2]>([
+    a,
+    { PK: "Demo/1", SK: "Book/1" },
+  ]);
+  const [typedItem1, typedItem2] = itemsWithTypedArray;
+
+  const inferredItems = await getItems([a, a]);
+
+  const [inferredItem1, inferredItem2] = inferredItems;
+
+  const simpleTypedItems = await getItems<DemoItem>([a, a]);
+  const [simpleTypedItem1, simpleTypedItem2] = simpleTypedItems;
 }

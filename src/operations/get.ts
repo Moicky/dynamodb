@@ -98,6 +98,16 @@ type GetItemsArgs = Partial<
  * );
  * ```
  */
+export async function getItems<T extends DynamoDBItem>(
+  keys: Partial<T>[],
+  args?: GetItemsArgs,
+  retry?: number
+): Promise<Array<T | undefined>>;
+export async function getItems<T extends [DynamoDBItem, ...DynamoDBItem[]]>(
+  keys: { [K in keyof T]: Partial<T[K]> } & { length: T["length"] },
+  args?: GetItemsArgs,
+  retry?: number
+): Promise<{ [K in keyof T]: T[K] | undefined }>;
 export async function getItems<T extends DynamoDBItem = DynamoDBItem>(
   keys: Partial<T>[],
   args: GetItemsArgs = {},
@@ -148,8 +158,8 @@ export async function getItems<T extends DynamoDBItem = DynamoDBItem>(
           const unprocessed = res?.UnprocessedKeys?.[TableName];
           const allItemsFromBatch = (res?.Responses?.[TableName] as T[]) || [];
           if (unprocessed) {
-            return getItems<T>(
-              unprocessed.Keys as T[],
+            return getItems<[T, ...T[]]>(
+              unprocessed.Keys as [T, ...T[]],
               { ...args, TableName },
               retry + 1
             ).then((items) => allItemsFromBatch.concat(items));
