@@ -53,7 +53,7 @@ describe("query operations", () => {
     expect(items.length).toEqual(10);
   });
 
-  it("should navigate to the end", async () => {
+  it("should navigate to the end with pagination", async () => {
     const pageSize = 11;
 
     const handleNavigation = async (currentPage, direction = "next") => {
@@ -79,7 +79,7 @@ describe("query operations", () => {
     expect(JSON.stringify(itemsFromPages)).toEqual(JSON.stringify(allItems));
   });
 
-  it("should work in both directions", async () => {
+  it("should work in both directions with pagination", async () => {
     const pageSize = 12;
 
     const handleNavigation = async (currentPage, direction = "next") => {
@@ -112,6 +112,75 @@ describe("query operations", () => {
     pageResults = await handleNavigation(pageResults.currentPage, "previous");
     expect(pageResults.items.length).toEqual(pageSize);
 
+    expect(JSON.stringify(pageResults.items.map((i) => i.SK))).toEqual(
+      JSON.stringify(
+        allItems
+          .slice(pageSize * (movesForward - 1), pageSize * movesForward)
+          .map((i) => i.SK)
+      )
+    );
+
+    pageResults = await handleNavigation(pageResults.currentPage, "next");
+    uniqueItems.push(...pageResults.items.map((i) => i.SK));
+    expect(pageResults.items.length).toEqual(pageSize);
+    expect(pageResults.hasPreviousPage).toEqual(true);
+    expect(pageResults.hasNextPage).toEqual(true);
+
+    const movesBackward = movesForward;
+    for (let i = 0; i < movesBackward; i++) {
+      pageResults = await handleNavigation(pageResults.currentPage, "previous");
+      expect(pageResults.currentPage.number).toEqual(3 - i);
+      uniqueItems.push(...pageResults.items.map((i) => i.SK));
+      expect(pageResults.items.length).toEqual(pageSize);
+      expect(pageResults.hasPreviousPage).toEqual(i < movesBackward - 1);
+      expect(pageResults.hasNextPage).toEqual(true);
+    }
+  });
+
+  it("should work with reverse sorting with pagination", async () => {
+    const pageSize = 12;
+
+    const handleNavigation = async (currentPage, direction = "next") => {
+      return queryPaginatedItems(
+        "#PK = :PK",
+        { PK },
+        { pageSize, currentPage, direction, ScanIndexForward: false }
+      );
+    };
+
+    const allItems = await queryAllItems(
+      "#PK = :PK",
+      { PK },
+      { ScanIndexForward: false }
+    );
+
+    let pageResults = {};
+    pageResults = await handleNavigation();
+    expect(pageResults.items.length).toEqual(pageSize);
+    expect(pageResults.hasPreviousPage).toEqual(false);
+    expect(pageResults.hasNextPage).toEqual(true);
+
+    const uniqueItems = [];
+    const movesForward = 3;
+    for (let i = 0; i < movesForward; i++) {
+      const prevPageResult = structuredClone(pageResults);
+      pageResults = await handleNavigation(pageResults.currentPage, "next");
+      uniqueItems.push(...pageResults.items.map((i) => i.SK));
+      expect(pageResults.items.length).toEqual(pageSize);
+      expect(pageResults.hasPreviousPage).toEqual(true);
+      expect(pageResults.hasNextPage).toEqual(true);
+      expect(
+        prevPageResult.items[0].SK.localeCompare(pageResults.items[0].SK)
+      ).toBeGreaterThan(0);
+    }
+    expect(new Set(uniqueItems).size === pageSize * movesForward).toEqual(true);
+
+    const prevPageResult = structuredClone(pageResults);
+    pageResults = await handleNavigation(pageResults.currentPage, "previous");
+    expect(pageResults.items.length).toEqual(pageSize);
+    expect(
+      prevPageResult.items[0].SK.localeCompare(pageResults.items[0].SK)
+    ).toBeLessThan(0);
     expect(JSON.stringify(pageResults.items.map((i) => i.SK))).toEqual(
       JSON.stringify(
         allItems

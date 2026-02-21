@@ -255,7 +255,8 @@ export async function queryPaginatedItems<
   const queryArgs: Partial<QueryCommandInput> = {
     ...args,
     Limit: pageSize,
-    ScanIndexForward: direction === "next",
+    ScanIndexForward:
+      direction === (args.ScanIndexForward === false ? "previous" : "next"),
   };
 
   let newPageNumber: number;
@@ -309,7 +310,7 @@ export async function queryPaginatedItems<
       }).then(({ Count }) => Count > 0)));
   let hasPreviousPage = newPageNumber > 1;
 
-  data.Items = data.Items || [];
+  data.Items = (data.Items || []).slice(0, pageSize);
   direction === "previous" && data.Items.reverse();
 
   const applySchema = (item: Record<string, any>) => {
