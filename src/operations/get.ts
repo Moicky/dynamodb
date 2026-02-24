@@ -113,12 +113,14 @@ export async function getItems<T extends DynamoDBItem = DynamoDBItem>(
   args: GetItemsArgs = {},
   retry = 0
 ): Promise<Array<T | undefined>> {
+  if (keys.length === 0) return [];
+
   args = withDefaults(args, "getItems");
 
   // creates batches of 100 items each and performs batchGet on every batch.
   // also retries up to 3 times if there are unprocessed items (due to size limit of 16MB)
   // returns items in same order as keys (not sorted by default when using batchGet)
-  if (retry > 3) return [];
+
   const batchReadLimit = 100;
   // duplicate key entries would cause an error, so we remove them
   const uniqueKeys = Object.values(

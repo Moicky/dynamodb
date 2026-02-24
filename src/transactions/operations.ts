@@ -11,11 +11,12 @@ import { DynamoDBReference } from "./references/types";
 import {
   ConditionOperation,
   CreateOperation,
+  DeepSetUpdates,
   DynamoDBItemKey,
-  DynamoDBSet,
   ItemWithKey,
   NestedParams,
-  NestedTypedParams,
+  Prettify,
+  StrictDeepNumberUpdates,
   TypedParams,
   UpdateOperation,
   WithoutKey,
@@ -93,10 +94,10 @@ export class UpdateOperations<U extends DynamoDBItem> {
     this.operation.actions.push({ _type: "set", values });
     return this;
   }
-  adjustNumber(values: NestedTypedParams<U, number>) {
+  adjustNumber(values: Prettify<StrictDeepNumberUpdates<U>>) {
     if (Object.keys(values).length === 0) return this;
 
-    this.operation.actions.push({ _type: "add", values });
+    this.operation.actions.push({ _type: "add", values: values as any });
     return this;
   }
   removeAttributes(...attributes: string[]) {
@@ -105,27 +106,21 @@ export class UpdateOperations<U extends DynamoDBItem> {
     return this;
   }
 
-  addItemsToSet(
-    values: {
-      [Key in keyof U as NonNullable<U[Key]> extends DynamoDBSet
-        ? Key
-        : never]?: U[Key] extends Set<infer type> ? Set<type> | type[] : never;
-    } & NestedParams<Set<any> | any[]>
-  ) {
+  addItemsToSet(values: Prettify<DeepSetUpdates<U>>) {
     if (Object.keys(values).length === 0) return this;
 
     this.operation.actions.push({
       _type: "add",
-      values: arraysToSets(values),
+      values: arraysToSets(values as Record<string, Set<any>>),
     });
     return this;
   }
-  deleteItemsFromSet(values: NestedTypedParams<U, Set<any>>) {
+  deleteItemsFromSet(values: Prettify<DeepSetUpdates<U>>) {
     if (Object.keys(values).length === 0) return this;
 
     this.operation.actions.push({
       _type: "delete",
-      values: arraysToSets(values),
+      values: arraysToSets(values as Record<string, Set<any> | any[]>),
     });
     return this;
   }
