@@ -62,8 +62,6 @@ export type NestedTypedParams<
 
 type Prev = [never, 0, 1, 2, 3];
 
-type PathEntry = { path: string; type: any };
-
 type DeepNumberPathEntries<
   T,
   Prefix extends string = "",
@@ -86,8 +84,9 @@ type DeepNumberPathEntries<
     }[keyof T & string];
 
 export type StrictDeepNumberUpdates<T> = {
-  [Entry in DeepNumberPathEntries<T> &
-    PathEntry as Entry["path"]]?: Entry["type"];
+  [E in DeepNumberPathEntries<T> as E extends { path: string }
+    ? E["path"]
+    : never]?: E extends { type: infer V } ? V : never;
 };
 
 type DeepSetPathEntries<T, Prefix extends string = "", D extends number = 3> = [
@@ -107,7 +106,7 @@ type DeepSetPathEntries<T, Prefix extends string = "", D extends number = 3> = [
     }[keyof T & string];
 
 export type DeepSetUpdates<T> = {
-  [Entry in DeepSetPathEntries<T> & PathEntry as Entry["path"]]?:
-    | Entry["type"][]
-    | Set<Entry["type"]>;
+  [E in DeepSetPathEntries<T> as E extends { path: string }
+    ? E["path"]
+    : never]?: E extends { type: infer V } ? V[] | Set<V> : never;
 };
