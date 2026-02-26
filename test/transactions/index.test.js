@@ -1,6 +1,5 @@
 require("dotenv/config");
 
-const { ConditionalCheckFailedException } = require("@aws-sdk/client-dynamodb");
 const {
   Transaction,
   getItems,
@@ -524,5 +523,24 @@ describe("Transaction operations", () => {
 
     const newItem = await getItem(item, { ConsistentRead: true });
     expect(newItem.nested.number).toEqual(3);
+  });
+
+  it("should merge update operations for the same item", async () => {
+    const item = generateItem("9003");
+    await putItem(item);
+
+    const transaction = new Transaction();
+    transaction.update(item).set({ title: "Test" });
+    transaction
+      .update(item)
+      .set({ author: "Test Author" })
+      .adjustNumber({ stars: 1 });
+
+    await transaction.execute();
+
+    const newItem = await getItem(item, { ConsistentRead: true });
+    expect(newItem.title).toEqual("Test");
+    expect(newItem.author).toEqual("Test Author");
+    expect(newItem.stars).toEqual(item.stars + 1);
   });
 });

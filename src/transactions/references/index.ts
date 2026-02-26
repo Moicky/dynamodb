@@ -48,11 +48,15 @@ const getRefsToResolve = (item: any) => {
   for (const value of Object.values<DynamoDBReference>(item)) {
     if (typeof value === "object") {
       if (value instanceof Set || Array.isArray(value)) {
-        refs.push(...[...value].map((v) => getRefsToResolve(v)).flat());
+        refs.push(
+          ...Array.from(value)
+            .map((v) => getRefsToResolve(v))
+            .flat()
+        );
       } else if (value?._type === "dynamodb:reference") {
         refs.push(value?._target);
       } else {
-        refs.push(...getRefsToResolve(value));
+        refs.push(...getRefsToResolve(value).flat());
       }
     }
   }
@@ -69,7 +73,7 @@ const injectRefs = (item: any, refs: Record<string, ItemWithKey>) => {
   for (const [key, value] of Object.entries<DynamoDBReference>(item)) {
     if (typeof value === "object") {
       if (value instanceof Set || Array.isArray(value)) {
-        item[key] = new Set([...value].map((v) => injectRefs(v, refs)));
+        item[key] = new Set(Array.from(value).map((v) => injectRefs(v, refs)));
       } else if (value?._type === "dynamodb:reference") {
         item[key] = refs[itemToStringKey(value._target)];
       } else {

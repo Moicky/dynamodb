@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 import { PutItemCommandOutput } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBItem,
@@ -10,8 +12,9 @@ import {
   queryPaginatedItems,
   removeAttributes,
   transactGetItems,
+  Transaction,
   updateItem,
-} from "../dist";
+} from "../src";
 
 type DemoItem = {
   PK: `User/${string}`;
@@ -141,4 +144,19 @@ async function playground() {
 
   const simpleTypedItems = await getItems<DemoItem>([a, a]);
   const [simpleTypedItem1, simpleTypedItem2] = simpleTypedItems;
+}
+
+async function transactionPlayground() {
+  type TxnItem = {
+    PK: `User/${string}`;
+    SK: string;
+    stars: number;
+    otherProp: string;
+  };
+
+  const res = await new Transaction()
+    .update<TxnItem>({ PK: "User/1", SK: "Book/1" })
+    .set({ otherProp: "test" })
+    .adjustNumber({ stars: 1 })
+    .execute();
 }

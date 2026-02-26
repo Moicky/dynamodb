@@ -1,3 +1,4 @@
+import { TransactWriteItemsCommandInput } from "@aws-sdk/client-dynamodb";
 import { Transaction } from ".";
 import {
   getAttributeNames,
@@ -39,7 +40,7 @@ export class CreateOperations<U extends ItemWithKey> {
 
       const refData =
         ref instanceof Set
-          ? [...ref].map((references) =>
+          ? Array.from(ref).map((references) =>
               createReference({ references, ...refArgs }, this.transaction)
             )
           : createReference({ references: ref, ...refArgs }, this.transaction);
@@ -54,6 +55,12 @@ export class CreateOperations<U extends ItemWithKey> {
         }
       }, this.operation.item);
     });
+  }
+
+  execute(
+    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>
+  ) {
+    return this.transaction.execute(args);
   }
 }
 
@@ -77,7 +84,7 @@ export class UpdateOperations<U extends DynamoDBItem> {
         values: {
           [attributeName]:
             ref instanceof Set
-              ? [...ref].map((references) =>
+              ? Array.from(ref).map((references) =>
                   createReference({ references, ...refArgs }, this.transaction)
                 )
               : createReference(
@@ -147,10 +154,17 @@ export class UpdateOperations<U extends DynamoDBItem> {
       }, {}),
     };
   }
+
+  execute(
+    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>
+  ) {
+    return this.transaction.execute(args);
+  }
 }
 
 export class ConditionOperations<U extends DynamoDBItem> {
   constructor(
+    private transaction: Transaction,
     private operations: Transaction["operations"],
     private item: DynamoDBItemKey,
     private args: Partial<ConditionOperation["args"]> & { TableName: string }
@@ -180,6 +194,12 @@ export class ConditionOperations<U extends DynamoDBItem> {
         ...this.args,
       },
     };
+  }
+
+  execute(
+    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>
+  ) {
+    return this.transaction.execute(args);
   }
 }
 

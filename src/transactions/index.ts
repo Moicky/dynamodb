@@ -50,6 +50,7 @@ export class Transaction {
   private updatedAt: any;
   private operations: { [itemKey: string]: ItemOperation } = {};
   private shouldSplitTransactions: boolean;
+  private hasBeenExecuted: boolean = false;
 
   constructor({
     tableName,
@@ -79,6 +80,12 @@ export class Transaction {
     item: WithoutReferences<T>,
     args?: CreateOperation["args"]
   ) {
+    if (this.hasBeenExecuted) {
+      throw new Error(
+        "[@moicky/dynamodb]: Transaction has already been executed"
+      );
+    }
+
     const itemKey = this.getItemKey(item, args?.TableName);
 
     const createOperation: CreateOperation = {
@@ -92,15 +99,30 @@ export class Transaction {
     return new CreateOperations<T>(createOperation, this);
   }
   update<T extends DynamoDBItemKey>(
-    item: OnlyKey<T>,
+    item: T extends any ? OnlyKey<T> : T,
     args?: UpdateOperation["args"]
   ) {
+    if (this.hasBeenExecuted) {
+      throw new Error(
+        "[@moicky/dynamodb]: Transaction has already been executed"
+      );
+    }
+
     const itemKey = this.getItemKey(item, args?.TableName);
+
+    const actions: UpdateAction[] = [
+      { _type: "set", values: { updatedAt: this.updatedAt } },
+    ];
+
+    const existingOperation = this.operations[itemKey];
+    if (existingOperation && existingOperation._type === "update") {
+      actions.push(...existingOperation.actions);
+    }
 
     const updateOperation: UpdateOperation = {
       _type: "update",
       item,
-      actions: [{ _type: "set", values: { updatedAt: this.updatedAt } }],
+      actions,
       args: { TableName: this.tableName, ...args },
     };
 
@@ -109,6 +131,12 @@ export class Transaction {
     return new UpdateOperations<T>(updateOperation, this);
   }
   delete(item: DynamoDBItemKey, args?: DeleteOperation["args"]) {
+    if (this.hasBeenExecuted) {
+      throw new Error(
+        "[@moicky/dynamodb]: Transaction has already been executed"
+      );
+    }
+
     const itemKey = this.getItemKey(item, args?.TableName);
 
     this.operations[itemKey] = {
@@ -116,12 +144,20 @@ export class Transaction {
       item,
       args: { TableName: this.tableName, ...args },
     };
+
+    return this;
   }
   addConditionFor<T extends DynamoDBItemKey>(
     item: T,
     args?: Partial<ConditionOperation["args"]>
   ) {
-    return new ConditionOperations<T>(this.operations, item, {
+    if (this.hasBeenExecuted) {
+      throw new Error(
+        "[@moicky/dynamodb]: Transaction has already been executed"
+      );
+    }
+
+    return new ConditionOperations<T>(this, this.operations, item, {
       TableName: this.tableName,
       ...args,
     });
@@ -234,6 +270,16 @@ export class Transaction {
 
     return new Promise<Record<string, ResponseItem[]>>(
       async (resolve, reject) => {
+        if (this.hasBeenExecuted) {
+          reject(
+            new Error(
+              "[@moicky/dynamodb]: Transaction has already been executed"
+            )
+          );
+        }
+
+        this.hasBeenExecuted = true;
+
         const operations = Object.values(this.operations);
 
         if (
