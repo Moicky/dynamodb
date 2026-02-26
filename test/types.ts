@@ -152,11 +152,30 @@ async function transactionPlayground() {
     SK: string;
     stars: number;
     otherProp: string;
+    nested: {
+      params: number;
+    };
   };
 
-  const res = await new Transaction()
-    .update<TxnItem>({ PK: "User/1", SK: "Book/1" })
-    .set({ otherProp: "test" })
-    .adjustNumber({ stars: 1 })
-    .execute();
+  const item: TxnItem = {
+    PK: "User/1",
+    SK: "Book/1",
+    stars: 0,
+    otherProp: "test",
+    nested: {
+      params: 1,
+    },
+  };
+
+  await putItem(item);
+
+  const txn = new Transaction();
+  txn.update<TxnItem>(item).set({ otherProp: "test" });
+  txn.update<TxnItem>(item).removeAttributes("nested");
+  await txn.execute();
+
+  const updatedItem = await getItem<TxnItem>(item);
+  console.log(updatedItem);
 }
+
+transactionPlayground();

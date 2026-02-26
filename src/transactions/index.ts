@@ -110,9 +110,7 @@ export class Transaction {
 
     const itemKey = this.getItemKey(item, args?.TableName);
 
-    const actions: UpdateAction[] = [
-      { _type: "set", values: { updatedAt: this.updatedAt } },
-    ];
+    const actions: UpdateAction[] = [];
 
     const existingOperation = this.operations[itemKey];
     if (existingOperation && existingOperation._type === "update") {
@@ -195,10 +193,16 @@ export class Transaction {
           ExpressionAttributeNames
         );
 
+        let hasSetUpdatedAt = false;
+
         actions.forEach((action) => {
           switch (action._type) {
             case "set":
               attr.appendBoth(action.values);
+
+              if ("updatedAt" in action.values) {
+                hasSetUpdatedAt = true;
+              }
 
               expressions.set.push(
                 Object.keys(action.values)
@@ -209,12 +213,20 @@ export class Transaction {
             case "remove":
               attr.appendNames(action.attributes);
 
+              if (action.attributes.includes("updatedAt")) {
+                hasSetUpdatedAt = true;
+              }
+
               expressions.remove.push(
                 action.attributes.map((key) => attr.getName(key)).join(", ")
               );
               break;
             case "add":
               attr.appendBoth(action.values);
+
+              if ("updatedAt" in action.values) {
+                hasSetUpdatedAt = true;
+              }
 
               expressions.add.push(
                 Object.keys(action.values)
@@ -225,6 +237,10 @@ export class Transaction {
             case "delete":
               attr.appendBoth(action.values);
 
+              if ("updatedAt" in action.values) {
+                hasSetUpdatedAt = true;
+              }
+
               expressions.delete.push(
                 Object.keys(action.values)
                   .map((key) => `${attr.getName(key)} ${attr.getValue(key)}`)
@@ -233,6 +249,14 @@ export class Transaction {
               break;
           }
         });
+
+        if (!hasSetUpdatedAt) {
+          attr.appendBoth({ updatedAt: this.updatedAt });
+
+          expressions.set.push(
+            `${attr.getName("updatedAt")} = ${attr.getValue("updatedAt")}`
+          );
+        }
 
         const joinedExpressions = Object.entries(expressions)
           .filter(([, value]) => value?.length)

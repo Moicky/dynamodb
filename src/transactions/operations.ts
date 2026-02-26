@@ -107,9 +107,18 @@ export class UpdateOperations<U extends DynamoDBItem> {
     this.operation.actions.push({ _type: "add", values: values as any });
     return this;
   }
-  removeAttributes(...attributes: string[]) {
+  removeAttributes(
+    ...attributes: Array<
+      | Exclude<Extract<keyof U, string>, keyof DynamoDBItemKey>
+      | `${string}.${string}`
+      | `${string}.${string}.${string}`
+    >
+  ): UpdateOperations<U> {
     if (attributes.length === 0) return this;
-    this.operation.actions.push({ _type: "remove", attributes });
+    this.operation.actions.push({
+      _type: "remove",
+      attributes: attributes.map(String),
+    });
     return this;
   }
 
