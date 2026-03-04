@@ -8,6 +8,8 @@ import {
 } from "@aws-sdk/client-dynamodb";
 
 import {
+  getAttributeNames,
+  getAttributesFromExpression,
   getClient,
   getDefaultTable,
   splitEvery,
@@ -49,6 +51,12 @@ export async function getItem<T extends DynamoDBItem = DynamoDBItem>(
   args: Partial<GetItemCommandInput> = {}
 ): Promise<T | undefined> {
   args = withDefaults(args, "getItem");
+
+  if (args?.ProjectionExpression && !args?.ExpressionAttributeNames) {
+    args.ExpressionAttributeNames = getAttributeNames(key, {
+      attributesToGet: getAttributesFromExpression(args?.ProjectionExpression),
+    });
+  }
 
   return getClient()
     .send(

@@ -64,4 +64,15 @@ describe("get operations", () => {
     const items = await getAllItems();
     expect(items.filter((item) => item?.PK === PK)).toHaveLength(itemCount);
   });
+
+  it("should retrieve items with projection expression", async () => {
+    const item = await getItem(
+      { PK, SK: "Book/1" },
+      { ProjectionExpression: "#pages" }
+    );
+
+    expect(item).toHaveProperty("pages");
+    expect(item).not.toHaveProperty("title");
+    expect(item).not.toHaveProperty("author");
+  });
 });
