@@ -305,11 +305,11 @@ export class Transaction {
         this.hasBeenExecuted = true;
 
         const operations = Object.values(this.operations);
+        if (operations.length === 0) return resolve({});
 
         if (
-          operations.length === 0 ||
-          (operations.length > OPERATIONS_LIMIT &&
-            !this.shouldSplitTransactions)
+          operations.length > OPERATIONS_LIMIT &&
+          !this.shouldSplitTransactions
         ) {
           reject(new Error("[@moicky/dynamodb]: Invalid number of operations"));
         }
