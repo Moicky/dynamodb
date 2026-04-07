@@ -78,11 +78,11 @@ export class Transaction {
 
   create<T extends ItemWithKey>(
     item: WithoutReferences<T>,
-    args?: CreateOperation["args"]
+    args?: CreateOperation["args"],
   ) {
     if (this.hasBeenExecuted) {
       throw new Error(
-        "[@moicky/dynamodb]: Transaction has already been executed"
+        "[@moicky/dynamodb]: Transaction has already been executed",
       );
     }
 
@@ -100,11 +100,11 @@ export class Transaction {
   }
   update<T extends DynamoDBItemKey>(
     item: T extends any ? OnlyKey<T> : T,
-    args?: UpdateOperation["args"]
+    args?: UpdateOperation["args"],
   ) {
     if (this.hasBeenExecuted) {
       throw new Error(
-        "[@moicky/dynamodb]: Transaction has already been executed"
+        "[@moicky/dynamodb]: Transaction has already been executed",
       );
     }
 
@@ -131,7 +131,7 @@ export class Transaction {
   delete(item: DynamoDBItemKey, args?: DeleteOperation["args"]) {
     if (this.hasBeenExecuted) {
       throw new Error(
-        "[@moicky/dynamodb]: Transaction has already been executed"
+        "[@moicky/dynamodb]: Transaction has already been executed",
       );
     }
 
@@ -147,11 +147,11 @@ export class Transaction {
   }
   addConditionFor<T extends DynamoDBItemKey>(
     item: T,
-    args?: Partial<ConditionOperation["args"]>
+    args?: Partial<ConditionOperation["args"]>,
   ) {
     if (this.hasBeenExecuted) {
       throw new Error(
-        "[@moicky/dynamodb]: Transaction has already been executed"
+        "[@moicky/dynamodb]: Transaction has already been executed",
       );
     }
 
@@ -190,7 +190,7 @@ export class Transaction {
         } = args;
         const attr = new ExpressionAttributes(
           ExpressionAttributeValues,
-          ExpressionAttributeNames
+          ExpressionAttributeNames,
         );
 
         let hasSetUpdatedAt = false;
@@ -207,7 +207,7 @@ export class Transaction {
               expressions.set.push(
                 Object.keys(action.values)
                   .map((key) => `${attr.getName(key)} = ${attr.getValue(key)}`)
-                  .join(", ")
+                  .join(", "),
               );
               break;
             case "remove":
@@ -218,7 +218,7 @@ export class Transaction {
               }
 
               expressions.remove.push(
-                action.attributes.map((key) => attr.getName(key)).join(", ")
+                action.attributes.map((key) => attr.getName(key)).join(", "),
               );
               break;
             case "add":
@@ -231,7 +231,7 @@ export class Transaction {
               expressions.add.push(
                 Object.keys(action.values)
                   .map((key) => `${attr.getName(key)} ${attr.getValue(key)}`)
-                  .join(", ")
+                  .join(", "),
               );
               break;
             case "delete":
@@ -244,7 +244,7 @@ export class Transaction {
               expressions.delete.push(
                 Object.keys(action.values)
                   .map((key) => `${attr.getName(key)} ${attr.getValue(key)}`)
-                  .join(", ")
+                  .join(", "),
               );
               break;
           }
@@ -254,7 +254,7 @@ export class Transaction {
           attr.appendBoth({ updatedAt: this.updatedAt });
 
           expressions.set.push(
-            `${attr.getName("updatedAt")} = ${attr.getValue("updatedAt")}`
+            `${attr.getName("updatedAt")} = ${attr.getValue("updatedAt")}`,
           );
         }
 
@@ -262,7 +262,7 @@ export class Transaction {
           .filter(([, value]) => value?.length)
           .reduce(
             (acc, [t, v]) => [...acc, `${t.toUpperCase()} ${v.join(", ")}`],
-            []
+            [],
           )
           .join(" ");
 
@@ -288,17 +288,17 @@ export class Transaction {
   }
 
   async execute(
-    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>
+    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>,
   ) {
     args = withDefaults(args, "transactWriteItems");
 
     return new Promise<Record<string, ResponseItem[]>>(
       async (resolve, reject) => {
         if (this.hasBeenExecuted) {
-          reject(
+          return reject(
             new Error(
-              "[@moicky/dynamodb]: Transaction has already been executed"
-            )
+              "[@moicky/dynamodb]: Transaction has already been executed",
+            ),
           );
         }
 
@@ -311,7 +311,9 @@ export class Transaction {
           operations.length > OPERATIONS_LIMIT &&
           !this.shouldSplitTransactions
         ) {
-          reject(new Error("[@moicky/dynamodb]: Invalid number of operations"));
+          return reject(
+            new Error("[@moicky/dynamodb]: Invalid number of operations"),
+          );
         }
 
         const conditionCheckItems = operations
@@ -333,7 +335,7 @@ export class Transaction {
               new TransactWriteItemsCommand({
                 TransactItems: populatedItems,
                 ...args,
-              })
+              }),
             )
             .then((res) => {
               Object.entries(res.ItemCollectionMetrics || {}).forEach(
@@ -345,14 +347,20 @@ export class Transaction {
 
                   results[tableName] ??= [];
                   results[tableName].push(...unmarshalledMetrics);
-                }
+                },
               );
             })
             .catch(reject);
         }
 
         return resolve(results);
-      }
+      },
     );
+  }
+
+  async commit(
+    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>,
+  ) {
+    return this.execute(args);
   }
 }

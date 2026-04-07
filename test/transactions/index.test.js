@@ -29,7 +29,7 @@ const conditionItemTruthy = {
 describe("Transaction operations", () => {
   beforeAll(async () => {
     const items = Array.from({ length: itemCount }).map((_, i) =>
-      generateItem((i + 1).toString(), (i + 1) % 2 === 0)
+      generateItem((i + 1).toString(), (i + 1) % 2 === 0),
     );
 
     const conditionItems = [conditionItemTruthy, conditionItemFalsy];
@@ -231,7 +231,7 @@ describe("Transaction operations", () => {
         });
 
       await expect(transaction.execute()).rejects.toThrow(
-        "ConditionalCheckFailed"
+        "ConditionalCheckFailed",
       );
     });
 
@@ -245,7 +245,7 @@ describe("Transaction operations", () => {
 
       const transaction = new Transaction();
       items.forEach((item) =>
-        transaction.update(item).set({ title: "Batch Updated" })
+        transaction.update(item).set({ title: "Batch Updated" }),
       );
 
       await transaction.execute();
@@ -308,7 +308,7 @@ describe("Transaction operations", () => {
       });
 
       await expect(transaction.execute()).rejects.toThrow(
-        "ConditionalCheckFailed"
+        "ConditionalCheckFailed",
       );
     });
 
@@ -398,24 +398,22 @@ describe("Transaction operations", () => {
   });
 
   describe("error cases", () => {
-    it("should throw error when executing empty transaction", async () => {
+    it("should not throw error when executing empty transaction", async () => {
       const transaction = new Transaction();
 
-      await expect(transaction.execute()).rejects.toThrow(
-        "[@moicky/dynamodb]: Invalid number of operations"
-      );
+      await expect(transaction.execute()).resolves.toEqual({});
     });
 
     it("should throw error when transaction has more than 100 operations without split config", async () => {
       const transaction = new Transaction();
       const items = Array.from({ length: 101 }).map((_, i) =>
-        generateItem(`7000-${i}`)
+        generateItem(`7000-${i}`),
       );
 
       items.forEach((item) => transaction.create(item));
 
       await expect(transaction.execute()).rejects.toThrow(
-        "[@moicky/dynamodb]: Invalid number of operations"
+        "[@moicky/dynamodb]: Invalid number of operations",
       );
     });
   });

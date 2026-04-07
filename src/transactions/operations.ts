@@ -26,7 +26,7 @@ import {
 export class CreateOperations<U extends ItemWithKey> {
   constructor(
     private operation: CreateOperation,
-    private transaction: Transaction
+    private transaction: Transaction,
   ) {}
 
   setReferences(refs: SetReferencesParams<U>) {
@@ -41,7 +41,7 @@ export class CreateOperations<U extends ItemWithKey> {
       const refData =
         ref instanceof Set
           ? Array.from(ref).map((references) =>
-              createReference({ references, ...refArgs }, this.transaction)
+              createReference({ references, ...refArgs }, this.transaction),
             )
           : createReference({ references: ref, ...refArgs }, this.transaction);
 
@@ -58,7 +58,7 @@ export class CreateOperations<U extends ItemWithKey> {
   }
 
   execute(
-    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>
+    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>,
   ) {
     return this.transaction.execute(args);
   }
@@ -67,7 +67,7 @@ export class CreateOperations<U extends ItemWithKey> {
 export class UpdateOperations<U extends DynamoDBItem> {
   constructor(
     private operation: UpdateOperation,
-    private transaction: Transaction
+    private transaction: Transaction,
   ) {}
 
   setReferences(refs: SetReferencesParams<U>) {
@@ -85,11 +85,11 @@ export class UpdateOperations<U extends DynamoDBItem> {
           [attributeName]:
             ref instanceof Set
               ? Array.from(ref).map((references) =>
-                  createReference({ references, ...refArgs }, this.transaction)
+                  createReference({ references, ...refArgs }, this.transaction),
                 )
               : createReference(
                   { references: ref, ...refArgs },
-                  this.transaction
+                  this.transaction,
                 ),
         },
       });
@@ -156,16 +156,18 @@ export class UpdateOperations<U extends DynamoDBItem> {
       }),
       ExpressionAttributeValues: getAttributesFromExpression(
         expression,
-        ":"
+        ":",
       ).reduce((acc, keyName) => {
         acc[`:${keyName}`] = values[keyName];
         return acc;
       }, {}),
     };
+
+    return this;
   }
 
   execute(
-    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>
+    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>,
   ) {
     return this.transaction.execute(args);
   }
@@ -176,7 +178,7 @@ export class ConditionOperations<U extends DynamoDBItem> {
     private transaction: Transaction,
     private operations: Transaction["operations"],
     private item: DynamoDBItemKey,
-    private args: Partial<ConditionOperation["args"]> & { TableName: string }
+    private args: Partial<ConditionOperation["args"]> & { TableName: string },
   ) {}
 
   matches({
@@ -188,7 +190,7 @@ export class ConditionOperations<U extends DynamoDBItem> {
   }) {
     if (Object.keys(values).length === 0) {
       throw new Error(
-        "[@moicky/dynamodb]: No values in ConditionCheck provided"
+        "[@moicky/dynamodb]: No values in ConditionCheck provided",
       );
     }
 
@@ -206,14 +208,14 @@ export class ConditionOperations<U extends DynamoDBItem> {
   }
 
   execute(
-    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>
+    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>,
   ) {
     return this.transaction.execute(args);
   }
 }
 
 const arraysToSets = <T extends DynamoDBItemKey>(
-  values: Record<string, T | Set<T> | Array<T>>
+  values: Record<string, T | Set<T> | Array<T>>,
 ): Record<string, T | Set<T>> => {
   return Object.entries(values).reduce(
     (acc, [key, value]) => ({
@@ -222,10 +224,10 @@ const arraysToSets = <T extends DynamoDBItemKey>(
         value instanceof Set
           ? value
           : Array.isArray(value)
-          ? new Set(value)
-          : value,
+            ? new Set(value)
+            : value,
     }),
-    {}
+    {},
   );
 };
 
