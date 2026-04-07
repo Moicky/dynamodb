@@ -47,7 +47,7 @@ export type ItemOperation =
 export type TypedParams<
   T extends DynamoDBItem,
   ValueType,
-  ParamType = ValueType
+  ParamType = ValueType,
 > = {
   [Key in keyof T as NonNullable<T[Key]> extends ValueType
     ? Key
@@ -57,7 +57,7 @@ export type NestedParams<T = any> = Record<`${string}.${string}`, T>;
 export type NestedTypedParams<
   T extends DynamoDBItem,
   ValueType,
-  ParamType = ValueType
+  ParamType = ValueType,
 > = TypedParams<T, ValueType, ParamType> & NestedParams<ParamType>;
 
 type Prev = [never, 0, 1, 2, 3];
@@ -65,22 +65,26 @@ type Prev = [never, 0, 1, 2, 3];
 type DeepNumberPathEntries<
   T,
   Prefix extends string = "",
-  D extends number = 3
+  D extends number = 3,
 > = [D] extends [never]
   ? never
   : {
       [K in keyof T & string]-?: NonNullable<T[K]> extends number
         ? { path: `${Prefix}${K}`; type: NonNullable<T[K]> }
         : NonNullable<T[K]> extends
-            | any[]
-            | Set<any>
-            | Date
-            | Function
-            | Uint8Array
-        ? never
-        : NonNullable<T[K]> extends object
-        ? DeepNumberPathEntries<NonNullable<T[K]>, `${Prefix}${K}.`, Prev[D]>
-        : never;
+              | any[]
+              | Set<any>
+              | Date
+              | Function
+              | Uint8Array
+          ? never
+          : NonNullable<T[K]> extends object
+            ? DeepNumberPathEntries<
+                NonNullable<T[K]>,
+                `${Prefix}${K}.`,
+                Prev[D]
+              >
+            : never;
     }[keyof T & string];
 
 export type StrictDeepNumberUpdates<T> = {
@@ -90,7 +94,7 @@ export type StrictDeepNumberUpdates<T> = {
 };
 
 type DeepSetPathEntries<T, Prefix extends string = "", D extends number = 3> = [
-  D
+  D,
 ] extends [never]
   ? never
   : {
@@ -99,10 +103,10 @@ type DeepSetPathEntries<T, Prefix extends string = "", D extends number = 3> = [
         | (infer E)[]
         ? { path: `${Prefix}${K}`; type: E }
         : NonNullable<T[K]> extends Date | Function | Uint8Array
-        ? never
-        : NonNullable<T[K]> extends object
-        ? DeepSetPathEntries<NonNullable<T[K]>, `${Prefix}${K}.`, Prev[D]>
-        : never;
+          ? never
+          : NonNullable<T[K]> extends object
+            ? DeepSetPathEntries<NonNullable<T[K]>, `${Prefix}${K}.`, Prev[D]>
+            : never;
     }[keyof T & string];
 
 export type DeepSetUpdates<T> = {

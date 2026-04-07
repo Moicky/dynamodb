@@ -1,5 +1,6 @@
 import {
   ItemCollectionMetrics,
+  TransactionCanceledException,
   TransactWriteItem,
   TransactWriteItemsCommand,
   TransactWriteItemsCommandInput,
@@ -44,6 +45,19 @@ type ResponseItem = Pick<ItemCollectionMetrics, "SizeEstimateRangeGB"> & {
   Key: Record<string, any>;
 };
 
+type ExecuteParams = Partial<
+  Omit<TransactWriteItemsCommandInput, "TransactItems">
+>;
+export type ExecuteParamsWithConditionFailedCallback = ExecuteParams & {
+  onConditionFailed: ConditionalCheckFailedCallback;
+};
+export type TransactionExecuteParams =
+  | ExecuteParams
+  | ExecuteParamsWithConditionFailedCallback;
+
+type ConditionalCheckFailedCallback = (
+  error: TransactionCanceledException,
+) => void | Promise<void>;
 export class Transaction {
   private tableName: string;
   private createdAt: any;
@@ -287,12 +301,18 @@ export class Transaction {
     }
   }
 
+  async execute(args: ExecuteParamsWithConditionFailedCallback): Promise<void>;
   async execute(
-    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>,
+    args?: ExecuteParams & { onConditionFailed?: undefined },
+  ): Promise<Record<string, ResponseItem[]>>;
+  async execute(
+    args?: ExecuteParams & {
+      onConditionFailed?: ConditionalCheckFailedCallback;
+    },
   ) {
     args = withDefaults(args, "transactWriteItems");
 
-    return new Promise<Record<string, ResponseItem[]>>(
+    return new Promise<void | Record<string, ResponseItem[]>>(
       async (resolve, reject) => {
         if (this.hasBeenExecuted) {
           return reject(
@@ -316,6 +336,14 @@ export class Transaction {
           );
         }
 
+        if (this.shouldSplitTransactions && args.onConditionFailed) {
+          return reject(
+            new Error(
+              "[@moicky/dynamodb]: Cannot use onConditionFailed callback when splitTransactionsIfAboveLimit is enabled",
+            ),
+          );
+        }
+
         const conditionCheckItems = operations
           .filter((op) => op._type === "condition")
           .map((op) => this.handleOperation(op));
@@ -324,6 +352,13 @@ export class Transaction {
           .map((op) => this.handleOperation(op));
 
         const availableSlots = OPERATIONS_LIMIT - conditionCheckItems.length;
+        if (availableSlots <= 0) {
+          return reject(
+            new Error(
+              "[@moicky/dynamodb]: Too many condition check operations, cannot execute transaction",
+            ),
+          );
+        }
         const batches = splitEvery(operationItems, availableSlots);
         const results: Record<string, ResponseItem[]> = {};
 
@@ -350,16 +385,35 @@ export class Transaction {
                 },
               );
             })
-            .catch(reject);
+            .catch((error) => {
+              if (error instanceof TransactionCanceledException) {
+                if (
+                  args.onConditionFailed &&
+                  error?.CancellationReasons?.some(
+                    (error) => error.Code === "ConditionalCheckFailed",
+                  )
+                ) {
+                  return resolve(args.onConditionFailed(error));
+                }
+              }
+
+              reject(error);
+            });
         }
 
         return resolve(results);
       },
     );
   }
+  async commit(args: ExecuteParamsWithConditionFailedCallback): Promise<void>;
   async commit(
-    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>,
-  ) {
-    return this.execute(args);
+    args?: ExecuteParams & { onConditionFailed?: undefined },
+  ): Promise<Record<string, ResponseItem[]>>;
+  async commit(
+    args?: ExecuteParams & {
+      onConditionFailed?: ConditionalCheckFailedCallback;
+    },
+  ): Promise<void | Record<string, ResponseItem[]>> {
+    return this.execute(args as any);
   }
 }

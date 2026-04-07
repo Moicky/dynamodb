@@ -397,6 +397,55 @@ describe("Transaction operations", () => {
     });
   });
 
+  describe("onConditionFailed callback", () => {
+    it("should return a result object when executed without onConditionFailed", async () => {
+      const transaction = new Transaction();
+      transaction.addConditionFor(conditionItemTruthy).matches({
+        expression: "#condition = :condition",
+        values: { condition: true },
+      });
+
+      const result = await transaction.execute();
+      expect(result).toEqual({});
+      expect(typeof result).toBe("object");
+    });
+
+    it("should invoke onConditionFailed callback when condition check fails", async () => {
+      const onConditionFailed = jest.fn();
+
+      const transaction = new Transaction();
+      transaction.addConditionFor(conditionItemFalsy).matches({
+        expression: "#condition = :condition",
+        values: { condition: true },
+      });
+
+      const result = await transaction.execute({ onConditionFailed });
+
+      expect(onConditionFailed).toHaveBeenCalledTimes(1);
+      expect(result).toBeUndefined();
+    });
+
+    it("should pass the TransactionCanceledException to the callback", async () => {
+      const onConditionFailed = jest.fn();
+
+      const transaction = new Transaction();
+      transaction.addConditionFor(conditionItemFalsy).matches({
+        expression: "#condition = :condition",
+        values: { condition: true },
+      });
+
+      await transaction.execute({ onConditionFailed });
+
+      expect(onConditionFailed).toHaveBeenCalledWith(
+        expect.objectContaining({
+          CancellationReasons: expect.arrayContaining([
+            expect.objectContaining({ Code: "ConditionalCheckFailed" }),
+          ]),
+        }),
+      );
+    });
+  });
+
   describe("error cases", () => {
     it("should not throw error when executing empty transaction", async () => {
       const transaction = new Transaction();

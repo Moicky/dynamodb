@@ -1,5 +1,8 @@
-import { TransactWriteItemsCommandInput } from "@aws-sdk/client-dynamodb";
-import { Transaction } from ".";
+import {
+  type ExecuteParamsWithConditionFailedCallback,
+  Transaction,
+  type TransactionExecuteParams,
+} from ".";
 import {
   getAttributeNames,
   getAttributeValues,
@@ -57,15 +60,19 @@ export class CreateOperations<U extends ItemWithKey> {
     });
   }
 
-  execute(
-    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>,
-  ) {
-    return this.transaction.execute(args);
+  async execute(
+    args: ExecuteParamsWithConditionFailedCallback,
+  ): Promise<void>;
+  async execute(args?: TransactionExecuteParams): Promise<Record<string, any>>;
+  async execute(args?: TransactionExecuteParams): Promise<void | Record<string, any>> {
+    return this.transaction.execute(args as any);
   }
-  commit(
-    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>,
-  ) {
-    return this.execute(args);
+  async commit(
+    args: ExecuteParamsWithConditionFailedCallback,
+  ): Promise<void>;
+  async commit(args?: TransactionExecuteParams): Promise<Record<string, any>>;
+  async commit(args?: TransactionExecuteParams): Promise<void | Record<string, any>> {
+    return this.execute(args as any);
   }
 }
 
@@ -168,18 +175,22 @@ export class UpdateOperations<U extends DynamoDBItem> {
       }, {}),
     };
 
-    return this;
+    return this.transaction;
   }
 
-  execute(
-    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>,
-  ) {
-    return this.transaction.execute(args);
+  async execute(
+    args: ExecuteParamsWithConditionFailedCallback,
+  ): Promise<void>;
+  async execute(args?: TransactionExecuteParams): Promise<Record<string, any>>;
+  async execute(args?: TransactionExecuteParams): Promise<void | Record<string, any>> {
+    return this.transaction.execute(args as any);
   }
-  commit(
-    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>,
-  ) {
-    return this.execute(args);
+  async commit(
+    args: ExecuteParamsWithConditionFailedCallback,
+  ): Promise<void>;
+  async commit(args?: TransactionExecuteParams): Promise<Record<string, any>>;
+  async commit(args?: TransactionExecuteParams): Promise<void | Record<string, any>> {
+    return this.transaction.execute(args as any);
   }
 }
 
@@ -217,15 +228,19 @@ export class ConditionOperations<U extends DynamoDBItem> {
     };
   }
 
-  execute(
-    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>,
-  ) {
-    return this.transaction.execute(args);
+  async execute(
+    args: ExecuteParamsWithConditionFailedCallback,
+  ): Promise<void>;
+  async execute(args?: TransactionExecuteParams): Promise<Record<string, any>>;
+  async execute(args?: TransactionExecuteParams): Promise<void | Record<string, any>> {
+    return this.transaction.execute(args as any);
   }
-  commit(
-    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>,
-  ) {
-    return this.execute(args);
+  async commit(
+    args: ExecuteParamsWithConditionFailedCallback,
+  ): Promise<void>;
+  async commit(args?: TransactionExecuteParams): Promise<Record<string, any>>;
+  async commit(args?: TransactionExecuteParams): Promise<void | Record<string, any>> {
+    return this.transaction.execute(args as any);
   }
 }
 
