@@ -62,6 +62,11 @@ export class CreateOperations<U extends ItemWithKey> {
   ) {
     return this.transaction.execute(args);
   }
+  commit(
+    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>,
+  ) {
+    return this.execute(args);
+  }
 }
 
 export class UpdateOperations<U extends DynamoDBItem> {
@@ -171,6 +176,11 @@ export class UpdateOperations<U extends DynamoDBItem> {
   ) {
     return this.transaction.execute(args);
   }
+  commit(
+    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>,
+  ) {
+    return this.execute(args);
+  }
 }
 
 export class ConditionOperations<U extends DynamoDBItem> {
@@ -211,6 +221,11 @@ export class ConditionOperations<U extends DynamoDBItem> {
     args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>,
   ) {
     return this.transaction.execute(args);
+  }
+  commit(
+    args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>,
+  ) {
+    return this.execute(args);
   }
 }
 

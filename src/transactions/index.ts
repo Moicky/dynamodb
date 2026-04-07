@@ -357,7 +357,6 @@ export class Transaction {
       },
     );
   }
-
   async commit(
     args?: Partial<Omit<TransactWriteItemsCommandInput, "TransactItems">>,
   ) {
