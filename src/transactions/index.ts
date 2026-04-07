@@ -57,7 +57,7 @@ export type TransactionExecuteParams =
 
 type ConditionalCheckFailedCallback = (
   error: TransactionCanceledException,
-) => void | Promise<void>;
+) => any;
 export class Transaction {
   private tableName: string;
   private createdAt: any;
